@@ -99,24 +99,53 @@ class starry_basemodel():
         self.model = model
     
     def plot_lc(self,point='guess'):
-        if hasattr(self,'lc_guess') == False:
-            self.build_model()
-        #f =  self.sys.flux(self.x).eval()
-        f = self.lc_guess
-        plt.plot(self.x,self.y,'.',label='data')
-        plt.plot(self.x,f,label='GP model')
-        plt.plot(self.x,self.lc_guess_astroph,label='Astrophysical Component')
-        plt.legend()
-        plt.show()
+        if point == "guess":
+            if hasattr(self,'lc_guess') == False:
+                self.build_model()
+            #f =  self.sys.flux(self.x).eval()
+            f = self.lc_guess
+            f_astroph = self.lc_guess_astroph
+        elif point == "mxap":
+            self.find_mxap()
+            f = self.mxap_soln['final_lc']
+            f_astroph = self.mxap_soln['lc_eval'] 
+        else:
+            raise Exception("Un-recognized test point {}".format(point))
         
-    def find_mxap(self):
-        if hasattr(self,'model') == False:
-            self.build_model()
+        fig, (ax,ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+        ax.plot(self.x,self.y,'.',label='data')
+        ax.plot(self.x,f,label='GP model')
+        ax.plot(self.x,f_astroph,label='Astrophysical Component')
+        resid = self.y - f
+        ax.legend()
         
-        with self.model:
-            self.mxap_soln =pmx.optimize()
+        ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
+        ax2.set_xlabel("Time")
+        ax2.set_ylabel("Resid (ppm)")
+        fig.savefig('plots/lc_{}.pdf'.format(point))
         
-        np.savez(self.mxap_path,**self.mxap_soln)
+    def find_mxap(self,recalculate=False):
+        """
+        Find the Maximum a Priori solution
+        If it has already been found, it is read from a file
+        
+        Parameters
+        -----------
+        recalculate: bool
+            If true, re-caclulate the solution, even one exists. If False, and
+            a previous one is found, it reads the previous solution.
+        
+        """
+        if (os.path.exists(self.mxap_path) == True) & (recalculate == False):
+            self.read_mxap()
+        else:
+            if hasattr(self,'model') == False:
+                self.build_model()
+        
+            with self.model:
+                self.mxap_soln =pmx.optimize()
+            
+            np.savez(self.mxap_path,**self.mxap_soln)
         
     def read_mxap(self):
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
