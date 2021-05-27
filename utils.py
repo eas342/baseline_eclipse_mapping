@@ -17,7 +17,8 @@ starry.config.quiet = True
 
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
-                 descrip='Orig_001'):
+                 descrip='Orig_002',
+                 map_type='variable',amp_type='variable'):
         """
         Set up a starry model
         
@@ -25,9 +26,13 @@ class starry_basemodel():
         self.data_path = dataPath
         self.get_data(path=self.data_path)
         self.mask = None
-        self.descrip = descrip
+        self.descrip = "{}_maptype_{}_amp_type_{}".format(descrip,map_type,amp_type)
         self.mxap_name = 'mxap_{}.npz'.format(self.descrip)
         self.mxap_path = os.path.join('fit_data','mxap_soln',self.mxap_name)
+        
+        self.map_type = map_type
+        self.amp_type = amp_type
+        
     
     def get_data(self,path):
         """ Gather the data
@@ -51,15 +56,25 @@ class starry_basemodel():
                                prot=self.meta['prot_star'])
             
             b_map = starry.Map(ydeg=3)
-            b_map.amp = 1e-3
+            if self.amp_type == 'variable':
+                b_map.amp = pm.Normal("amp", mu=1e-3, sd=1e-3)
+            elif 'fixedAt' in self.amp_type:
+                b_map.amp = float(self.amp_type.split("fixedAt")[1])
+            else:
+                b_map.amp = 1e-3
             
-            sec_mu = np.zeros(b_map.Ny)
-            sec_mu[0] = 1e-3
-            sec_L = np.zeros(b_map.Ny)
-            sec_L[0] = (0.2 * sec_mu[0])**2 ## covariance is squared
-            sec_L[1:] = (0.5 * sec_mu[0])**2
+            ncoeff = b_map.Ny - 1
+            sec_mu = np.zeros(ncoeff)
+            sec_cov = 0.5**2 * np.eye(ncoeff)
+            if self.map_type == 'variable':
+                b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,))
+            # sec_mu = np.zeros(b_map.Ny)
+            # sec_mu[0] = 1e-3
+            # sec_L = np.zeros(b_map.Ny)
+            # sec_L[0] = (0.2 * sec_mu[0])**2 ## covariance is squared
+            # sec_L[1:] = (0.5 * sec_mu[0])**2
             
-            b_map.set_prior(mu=sec_mu, L=sec_L)
+            # b_map.set_prior(mu=sec_mu, L=sec_L)
             b = starry.kepler.Secondary(b_map,
                                         m=0.0,
                                         r=self.meta['rp'],
@@ -122,7 +137,7 @@ class starry_basemodel():
         ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
         ax2.set_xlabel("Time")
         ax2.set_ylabel("Resid (ppm)")
-        fig.savefig('plots/lc_{}.pdf'.format(point))
+        fig.savefig('plots/lc_{}_{}.pdf'.format(self.descrip,point))
         
     def find_mxap(self,recalculate=False):
         """
