@@ -17,7 +17,7 @@ starry.config.quiet = True
 
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
-                 descrip='Orig_002',
+                 descrip='newrho_001',
                  map_type='variable',amp_type='variable'):
         """
         Set up a starry model
@@ -95,7 +95,7 @@ class starry_basemodel():
             
             ## estimate GP error as std
             sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
-            rho_gp = pm.Lognormal("rho_gp", mu=np.log(5e-2), sigma=0.5)
+            rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
             #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
             #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
             
@@ -138,6 +138,7 @@ class starry_basemodel():
         ax2.set_xlabel("Time")
         ax2.set_ylabel("Resid (ppm)")
         fig.savefig('plots/lc_{}_{}.pdf'.format(self.descrip,point))
+        plt.close(fig)
         
     def find_mxap(self,recalculate=False):
         """
@@ -165,4 +166,18 @@ class starry_basemodel():
     def read_mxap(self):
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
         self.mxap_soln = dict(npzfiles)
+
+
+def check_rho_prior():
+    x = np.linspace(-5, 10, 500)
+    rho_gp_logp = pm.Lognormal.dist(mu=np.log(2.5), sigma=0.5).logp(np.exp(x)).eval()
+    fig, ax = plt.subplots()
+    ax.plot(x,np.exp(rho_gp_logp))
+    ax.set_xlabel("Log($\rho$)")
+    ax.set_ylabel("Probability")
+    ax.axvline(np.log(0.3),color="green")
+    fig.savefig('plots/prior_checks/rho_check_001.pdf')
+    
+    
+    
     

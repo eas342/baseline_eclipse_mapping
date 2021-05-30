@@ -3,4 +3,5 @@
 __pycache__/
 *.npz
 plots/*.pdf
+plots/*/*.pdf
 *.pyc
