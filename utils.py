@@ -173,7 +173,7 @@ def check_rho_prior():
     rho_gp_logp = pm.Lognormal.dist(mu=np.log(2.5), sigma=0.5).logp(np.exp(x)).eval()
     fig, ax = plt.subplots()
     ax.plot(x,np.exp(rho_gp_logp))
-    ax.set_xlabel("Log($\rho$)")
+    ax.set_xlabel(r"Log($\rho $)")
     ax.set_ylabel("Probability")
     ax.axvline(np.log(0.3),color="green")
     fig.savefig('plots/prior_checks/rho_check_001.pdf')
