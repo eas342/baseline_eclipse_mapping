@@ -95,6 +95,8 @@ class starry_basemodel():
             
             ## estimate GP error as std
             sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
+            ## Estimate GP error near the photon error
+            #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
             rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
             #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
             #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
@@ -168,15 +170,33 @@ class starry_basemodel():
         self.mxap_soln = dict(npzfiles)
 
 
-def check_rho_prior():
-    x = np.linspace(-5, 10, 500)
-    rho_gp_logp = pm.Lognormal.dist(mu=np.log(2.5), sigma=0.5).logp(np.exp(x)).eval()
+def check_lognorm_prior(variable='rho'):
+    
+    if variable == "sigma_gp":
+        x = np.linspace(-12, -1, 500)
+        sb = starry_basemodel()
+        ref_val = 15e-6#np.std(sb.y[sb.mask])
+        mu=np.log(np.std(sb.y[sb.mask])) * 1.0
+        sigma = 0.5
+        #mu = np.log(ref_val)
+        
+        xLabel = r"$\sigma_{GP}$"
+    elif variable == "rho":
+        x = np.linspace(-5, 10, 500)
+        xLabel = r"Log($\rho $)"
+        mu=np.log(2.5)
+        sigma = 0.5
+        ref_val = 0.3
+    else:
+        raise Exception("Unrecognized variable {}".format(variable))
+    
+    logp = pm.Lognormal.dist(mu=mu, sigma=sigma).logp(np.exp(x)).eval()
     fig, ax = plt.subplots()
-    ax.plot(x,np.exp(rho_gp_logp))
-    ax.set_xlabel(r"Log($\rho $)")
+    ax.plot(x,np.exp(logp))
+    ax.set_xlabel(xLabel)
     ax.set_ylabel("Probability")
-    ax.axvline(np.log(0.3),color="green")
-    fig.savefig('plots/prior_checks/rho_check_001.pdf')
+    ax.axvline(np.log(ref_val),color="green")
+    fig.savefig('plots/prior_checks/{}_check_001.pdf'.format(variable))
     
     
     
