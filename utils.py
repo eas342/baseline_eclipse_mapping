@@ -17,7 +17,7 @@ starry.config.quiet = True
 
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
-                 descrip='newrho_001',
+                 descrip='newrho_smallGP_001',
                  map_type='variable',amp_type='variable'):
         """
         Set up a starry model
@@ -94,9 +94,9 @@ class starry_basemodel():
             sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(np.std(self.y[self.mask])), sigma=0.5)
             
             ## estimate GP error as std
-            sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
+            #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
-            #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
+            sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
             rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
             #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
             #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
