@@ -8,6 +8,7 @@ where:
 
 * A=Light Curve Name, description of the lightcurve.
 	+ "Orig" is the original cubic (3rd order) baseline
+	+ Flat is the astrophysical signal only w/ a flat baseline
 * B=Number of the GP parameter set
 * C=Description of the GP parameters
 * D=fixed/free for the Map Type.
