@@ -17,22 +17,31 @@ starry.config.quiet = True
 
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
-                 descrip='newrho_smallGP_001',
-                 map_type='variable',amp_type='variable'):
+                 descrip='Orig_006_newrho_smallGP',
+                 map_type='variable',amp_type='variable',
+                 systematics='Cubic'):
         """
         Set up a starry model
         
         """
-        self.data_path = dataPath
-        self.get_data(path=self.data_path)
+        
+        
         self.mask = None
-        self.descrip = "{}_maptype_{}_amp_type_{}".format(descrip,map_type,amp_type)
+        self.systematics = systematics
+        if self.systematics == 'Cubic':
+            baselineType = ''
+        else:
+            baselineType = self.systematics
+        
+        self.descrip = "{}_maptype_{}_amp_type_{}{}".format(descrip,map_type,amp_type,baselineType)
         self.mxap_name = 'mxap_{}.npz'.format(self.descrip)
         self.mxap_path = os.path.join('fit_data','mxap_soln',self.mxap_name)
         
         self.map_type = map_type
         self.amp_type = amp_type
         
+        self.data_path = dataPath
+        self.get_data(path=self.data_path)
     
     def get_data(self,path):
         """ Gather the data
@@ -40,7 +49,14 @@ class starry_basemodel():
         self.dat = ascii.read(path)
         #self.tref = np.round(np.min(self.dat['Time (days)']))
         self.x = np.ascontiguousarray(self.dat['Time (days)'])# - self.tref)
-        self.y = np.ascontiguousarray(self.dat['Flux'])
+        
+        if self.systematics == 'Cubic':
+            self.y = np.ascontiguousarray(self.dat['Flux'])
+        elif self.systematics == 'Flat':
+            self.y = np.ascontiguousarray(self.dat['Flux before Baseline'])
+        else:
+            raise Exception("Unrecognized Lightcurve {}".format())
+        
         self.yerr = np.ascontiguousarray(self.dat['Flux err'])
         self.meta = self.dat.meta
     
@@ -169,6 +185,8 @@ class starry_basemodel():
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
         self.mxap_soln = dict(npzfiles)
 
+    def sample(self):
+        pass
 
 def check_lognorm_prior(variable='rho'):
     
