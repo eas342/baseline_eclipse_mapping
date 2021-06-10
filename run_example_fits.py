@@ -17,7 +17,7 @@ def check_flat_vs_curved_baseline(map_type='fixed',find_posterior=False):
     Try fitting a lightcurve with a flat baseline vs curved
     """
     systematics=['Cubic','Flat']
-    descrips = ['Orig_001','Flat_001']
+    descrips = ['Orig_006_newrho_smallGP','Flat_001']
     for ind,sys_type in enumerate(systematics):
         sb = utils.starry_basemodel(descrip=descrips[ind],
                                     map_type=map_type,amp_type='variable',
