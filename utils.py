@@ -211,7 +211,7 @@ class starry_basemodel():
                     chains=2, 
                     init="adapt_full", 
                     target_accept=0.9)
-                    
+            pm.save_trace(trace, directory =outDir, overwrite = True)
         else:
             with self.model:
                 trace = pm.load_trace(directory=outDir)
