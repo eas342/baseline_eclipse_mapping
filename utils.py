@@ -19,7 +19,7 @@ class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
                  descrip='Orig_006_newrho_smallGP',
                  map_type='variable',amp_type='variable',
-                 systematics='Cubic'):
+                 systematics='Cubic',use_gp=True):
         """
         Set up a starry model
         
@@ -39,6 +39,8 @@ class starry_basemodel():
         
         self.map_type = map_type
         self.amp_type = amp_type
+        
+        self.use_gp = use_gp
         
         self.data_path = dataPath
         self.get_data(path=self.data_path)
@@ -112,18 +114,22 @@ class starry_basemodel():
             ## estimate GP error as std
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
-            sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
-            rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
-            #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
-            #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
+            if self.use_gp == True:
+                sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
+                rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
+                #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
+                #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
             
-            ## non-periodic
-            kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, Q=0.25)
+                ## non-periodic
+                kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, Q=0.25)
             
-            gp = GaussianProcess(kernel, t=self.x[self.mask], yerr=sigma_lc,quiet=True)
-            gp.marginal("gp", observed=resid)
-            #gp_pred = pm.Deterministic("gp_pred", gp.predict(resid))
-            final_lc = pm.Deterministic("final_lc",lc_eval + gp.predict(resid))
+                gp = GaussianProcess(kernel, t=self.x[self.mask], yerr=sigma_lc,quiet=True)
+                gp.marginal("gp", observed=resid)
+                #gp_pred = pm.Deterministic("gp_pred", gp.predict(resid))
+                final_lc = pm.Deterministic("final_lc",lc_eval + gp.predict(resid))
+            else:
+                final_lc = pm.Deterministic("final_lc",lc_eval)
+                pm.Normal("obs", mu=light_curve, sd=sigma_lc, observed=self.y)
             
             # Save our initial guess w/ just the astrophysical component
             self.lc_guess_astroph = pmx.eval_in_model(lc_eval)
@@ -185,8 +191,32 @@ class starry_basemodel():
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
         self.mxap_soln = dict(npzfiles)
 
-    def sample(self):
-        pass
+    def find_posterior(self):
+        if hasattr(self,'model') == False:
+            self.build_model()
+        
+        if hasattr(self,'mxap_soln') == False:
+            self.find_mxap()
+        
+        outDir = os.path.join('fit_data','traces','trace_{}'.format(self.descrip))
+        if os.path.exists(outDir) == False:
+            os.mkdir(outDir)
+            np.random.seed(42)
+            with self.model: 
+                trace = pm.sample( 
+                    tune=3000, 
+                    draws=3000, 
+                    start=self.mxap_soln, 
+                    cores=2, 
+                    chains=2, 
+                    init="adapt_full", 
+                    target_accept=0.9)
+                    
+        else:
+            with self.model:
+                trace = pm.load_trace(directory=outDir)
+        
+        self.trace = trace
 
 def check_lognorm_prior(variable='rho'):
     
