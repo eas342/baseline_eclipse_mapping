@@ -10,6 +10,7 @@ from corner import corner
 import pymc3 as pm
 from celerite2.theano import terms, GaussianProcess
 import pymc3_ext as pmx
+import corner
 import os
 
 starry.config.lazy = True
@@ -161,7 +162,7 @@ class starry_basemodel():
         ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
         ax2.set_xlabel("Time")
         ax2.set_ylabel("Resid (ppm)")
-        fig.savefig('plots/lc_{}_{}.pdf'.format(self.descrip,point))
+        fig.savefig('plots/lc_checks/lc_{}_{}.pdf'.format(self.descrip,point))
         plt.close(fig)
         
     def find_mxap(self,recalculate=False):
@@ -217,6 +218,76 @@ class starry_basemodel():
                 trace = pm.load_trace(directory=outDir)
         
         self.trace = trace
+    
+    def select_plot_variables(self,sph_harmonics='none',
+                              include_GP=False):
+        """
+        Select a list of variables to plot
+        This automatically skips over things like the lightcurve
+                              
+        sph_harmonics: str
+            What to do with spherical harmonics? "none" excludes them
+        include_GP: bool
+            Include the Gaussian process parameters?
+        """
+        if hasattr(self,'mxap_soln') == False:
+            self.find_mxap()
+        
+        gp_vars = ['sigma_gp','rho_gp']
+        
+        mxap_vars = list(self.mxap_soln.keys())
+        ## make a list of variables to keep
+        keep_list = []
+        for one_var in mxap_vars:
+            mxap_val = self.mxap_soln[one_var]
+            if one_var == 'sec_y':
+                if sph_harmonics == 'none':
+                    pass ## skip
+                else:
+                    raise NotImplementedError("Have to set up sph harm variables")
+            elif one_var[-5:] == 'log__':
+                ## Skip variables that have both log and linear versions
+                pass
+            elif one_var == 'final_lc':
+                ## skip the lighcurve deterministic variable
+                pass
+            elif one_var == 'lc_eval':
+                ## skip the lighcurve deterministic variable
+                pass
+            elif (one_var in gp_vars) & (include_GP == False):
+                pass
+            else:
+                keep_list.append(one_var)
+                
+        return keep_list
+    
+    def get_truths(self,varnames):
+        truths = []
+        for oneVar in varnames:
+            if oneVar == 'amp':
+                truths.append(self.meta['Amplitude'])
+            elif oneVar == 'sigma_lc':
+                truths.append(np.median(self.yerr))
+            else:
+                truths.append(None)
+        
+        return truths
+    
+    def plot_corner(self):
+        if hasattr(self,'trace') == False:
+            self.find_posterior()
+        
+        varnames = self.select_plot_variables()
+        
+        samples = pm.trace_to_dataframe(self.trace, varnames=varnames)
+        #_ = corner.corner(samples)
+        # truths = [0.00699764850849,None, None]
+        #,range=[(0.0068,0.00740),(-2.35,-1.90),(-4.5,2.0)])
+        truths = self.get_truths(varnames)
+        _ = corner.corner(samples,truths=truths)
+        plt.savefig('plots/corner/{}'.format(self.descrip))
+        plt.close()
+    
 
 def check_lognorm_prior(variable='rho'):
     

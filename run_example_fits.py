@@ -25,6 +25,7 @@ def check_flat_vs_curved_baseline(map_type='fixed',find_posterior=False):
         sb.plot_lc(point='mxap')
         if find_posterior == True:
             sb.find_posterior()
+            sb.plot_corner()
     
 def run_inference():
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True)

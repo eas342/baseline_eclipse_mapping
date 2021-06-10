@@ -4,4 +4,6 @@ __pycache__/
 *.npz
 plots/*.pdf
 plots/*/*.pdf
+plots/*/*.png
+fit_data/traces/*/*/*.json
 *.pyc
