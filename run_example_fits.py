@@ -18,6 +18,8 @@ def check_flat_vs_curved_baseline(map_type='fixed',find_posterior=False):
     """
     systematics=['Cubic','Flat']
     descrips = ['Orig_006_newrho_smallGP','Flat_001']
+    
+    sb_list = []
     for ind,sys_type in enumerate(systematics):
         sb = utils.starry_basemodel(descrip=descrips[ind],
                                     map_type=map_type,amp_type='variable',
@@ -26,10 +28,16 @@ def check_flat_vs_curved_baseline(map_type='fixed',find_posterior=False):
         if find_posterior == True:
             sb.find_posterior()
             sb.plot_corner()
+        sb_list.append(sb)
+    
+    utils.compare_corners(sb_list[0],sb_list[1])
     
 def run_inference():
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True)
+
+
     
+
 if __name__ == "__main__":
     run_inference()
     
