@@ -1,3 +1,4 @@
+# This is what I had in my py36 conda environment for this project
 aesara-theano-fallback==0.0.4
 alabaster==0.7.12
 anaconda-client==1.7.2
