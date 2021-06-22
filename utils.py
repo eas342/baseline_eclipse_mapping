@@ -20,7 +20,8 @@ class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
                  descrip='Orig_006_newrho_smallGP',
                  map_type='variable',amp_type='variable',
-                 systematics='Cubic',use_gp=True):
+                 systematics='Cubic',use_gp=True,
+                 degree=3):
         """
         Set up a starry model
         
@@ -40,6 +41,7 @@ class starry_basemodel():
         
         self.map_type = map_type
         self.amp_type = amp_type
+        self.degree = degree
         
         self.use_gp = use_gp
         
@@ -74,7 +76,7 @@ class starry_basemodel():
                                r=self.meta['R_star'],
                                prot=self.meta['prot_star'])
             
-            b_map = starry.Map(ydeg=3)
+            b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
                 b_map.amp = pm.Normal("amp", mu=1e-3, sd=1e-3)
             elif 'fixedAt' in self.amp_type:
@@ -130,7 +132,7 @@ class starry_basemodel():
                 final_lc = pm.Deterministic("final_lc",lc_eval + gp.predict(resid))
             else:
                 final_lc = pm.Deterministic("final_lc",lc_eval)
-                pm.Normal("obs", mu=light_curve, sd=sigma_lc, observed=self.y)
+                pm.Normal("obs", mu=final_lc, sd=sigma_lc, observed=self.y)
             
             # Save our initial guess w/ just the astrophysical component
             self.lc_guess_astroph = pmx.eval_in_model(lc_eval)
@@ -226,7 +228,9 @@ class starry_basemodel():
         This automatically skips over things like the lightcurve
                               
         sph_harmonics: str
-            What to do with spherical harmonics? "none" excludes them
+            What to do with spherical harmonics?
+                "none" excludes all spherical harmonics
+                "all" will choose all spherical harmonics
         include_GP: bool
             Include the Gaussian process parameters?
         """
@@ -244,7 +248,7 @@ class starry_basemodel():
                 if sph_harmonics == 'none':
                     pass ## skip
                 else:
-                    raise NotImplementedError("Have to set up sph harm variables")
+                    keep_list.append(one_var)
             elif one_var[-5:] == 'log__':
                 ## Skip variables that have both log and linear versions
                 pass
@@ -254,8 +258,12 @@ class starry_basemodel():
             elif one_var == 'lc_eval':
                 ## skip the lighcurve deterministic variable
                 pass
-            elif (one_var in gp_vars) & (include_GP == False):
-                pass
+            
+            elif (one_var in gp_vars):
+                if include_GP == True:
+                    keep_list.append(one_var)
+                else:
+                    pass
             else:
                 keep_list.append(one_var)
                 
@@ -268,26 +276,93 @@ class starry_basemodel():
                 truths.append(self.meta['Amplitude'])
             elif oneVar == 'sigma_lc':
                 truths.append(np.median(self.yerr))
+            elif 'sec_y' in oneVar:
+                ind = int(oneVar.split('sec_y__')[-1])
+                truths.append(self.meta['y_input'][ind])
             else:
                 truths.append(None)
         
         return truths
     
-    def plot_corner(self):
+    def prep_corner(self):
+        
         if hasattr(self,'trace') == False:
             self.find_posterior()
         
-        varnames = self.select_plot_variables()
+        varnames = self.select_plot_variables(sph_harmonics='all')
         
         samples = pm.trace_to_dataframe(self.trace, varnames=varnames)
-        #_ = corner.corner(samples)
-        # truths = [0.00699764850849,None, None]
-        #,range=[(0.0068,0.00740),(-2.35,-1.90),(-4.5,2.0)])
-        truths = self.get_truths(varnames)
-        _ = corner.corner(samples,truths=truths)
+        
+        ## the trace_to_dataframe splits up arrays of variables
+        final_varlist = list(samples.keys())
+        
+        truths = self.get_truths(final_varlist)
+        labels = label_converter(final_varlist)
+        
+        return samples,truths,labels
+    
+    def plot_corner(self):
+        samples, truths,labels = self.prep_corner()
+        _ = corner.corner(samples,truths=truths,labels=labels)
         plt.savefig('plots/corner/{}'.format(self.descrip))
         plt.close()
     
+    
+    def find_design_matrix(self):
+        if hasattr(self,'model') == False:
+            self.build_model()
+        
+        with self.model:
+            self.A = pmx.eval_in_model(self.sys.design_matrix(self.x))
+        
+    
+def ylm_labels(degree):
+    """
+    Make a list of the Ylm variables for a given degree
+    These are designed to be rendered in LaTeX
+    
+    The Y0,0 term is skipped because that is always 1.0 b/c the flux is
+    Y0,0 * amplitude
+    """
+    labels = []
+    for l in range(1, degree+1):
+        for m in range(-l,1 + l):
+            oneLabel = r"$Y_{%d,%d}$" % (l, m)
+            labels.append(oneLabel)
+    return labels
+
+def label_converter(varList):
+    """
+    Convert the labels from the trace into ones for plotting
+    """
+    outList = []
+    ylm_full = ylm_labels(10)
+    if len(ylm_full) < len(varList) - 2:
+        raise Exception("Need a bigger degree in labels list")
+    
+    for oneLabel in varList:
+        if 'sec_y' in oneLabel:
+            y_ind =  int(oneLabel.split('sec_y__')[-1])
+            outLabel = ylm_full[y_ind]
+        elif oneLabel == 'sigmal_lc':
+            outLabel = "$\sigma_{lc}$"
+        else:
+            outLabel = oneLabel
+        
+        outList.append(outLabel)
+    return outList
+    
+
+def compare_corners(sb1,sb2):
+    
+    samples1, truths1, labels1 = sb1.prep_corner()
+    samples2, truths2, labels2 = sb2.prep_corner()
+    fig1 = corner.corner(samples1,truths=truths1,
+                        color='green')
+    fig2 = corner.corner(samples2,truths=truths2,
+                        color='red',fig=fig1,labels=labels2)
+    fig1.savefig('plots/corner/comparison_{}_vs_{}.png'.format(sb1.descrip[0:20],sb2.descrip[0:20]))
+    plt.close(fig1)
 
 def check_lognorm_prior(variable='rho'):
     
@@ -318,5 +393,25 @@ def check_lognorm_prior(variable='rho'):
     fig.savefig('plots/prior_checks/{}_check_001.pdf'.format(variable))
     
     
+def plot_sph_harm_lc():
+    sb = starry_basemodel(dataPath='sim_data/sim_data_baseline.ecsv',
+                          descrip='Orig_006_newrho_smallGP',
+                          map_type='variable',amp_type='variable',
+                          systematics='Cubic',use_gp=False,degree=3)
+    sb.find_design_matrix()
     
+    titles = ylm_labels(sb.degree)
+    titles.insert(0,'amp')
+    titles.insert(0,'flat')
     
+    nterms = len(titles)
+    for ind in range(nterms):
+        fig, ax = plt.subplots(figsize=(4,4))
+        ax.plot(sb.x,sb.A[:,ind])
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Flux")
+        ax.set_title(titles[ind])
+        outPath = os.path.join('plots','sph_harm_lc','lc_{:03d}.pdf'.format(ind),)
+        fig.savefig(outPath,bbox_inches='tight')
+        plt.close(fig)
+        
