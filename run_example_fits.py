@@ -12,7 +12,7 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb = utils.starry_basemodel(descrip=descrip,map_type='fixed',amp_type='fixedAt1e-3')
     sb.plot_lc(point='mxap')
 
-def check_flat_vs_curved_baseline(map_type='fixed',find_posterior=False):
+def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False):
     """
     Try fitting a lightcurve with a flat baseline vs curved
     """
