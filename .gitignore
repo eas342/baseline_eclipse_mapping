@@ -5,5 +5,6 @@ __pycache__/
 plots/*.pdf
 plots/*/*.pdf
 plots/*/*.png
+plots/forward_model/forward_mod.tex
 fit_data/traces/*/*/*.json
 *.pyc

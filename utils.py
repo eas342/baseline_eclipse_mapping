@@ -12,6 +12,7 @@ from celerite2.theano import terms, GaussianProcess
 import pymc3_ext as pmx
 import corner
 import os
+import pdb
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -222,7 +223,8 @@ class starry_basemodel():
         self.trace = trace
     
     def select_plot_variables(self,sph_harmonics='none',
-                              include_GP=False):
+                              include_GP=False,
+                              include_sigma_lc=True):
         """
         Select a list of variables to plot
         This automatically skips over things like the lightcurve
@@ -231,6 +233,7 @@ class starry_basemodel():
             What to do with spherical harmonics?
                 "none" excludes all spherical harmonics
                 "all" will choose all spherical harmonics
+                "m=1" will choose only m=1 sph harmonics (later down the line)
         include_GP: bool
             Include the Gaussian process parameters?
         """
@@ -245,7 +248,7 @@ class starry_basemodel():
         for one_var in mxap_vars:
             mxap_val = self.mxap_soln[one_var]
             if one_var == 'sec_y':
-                if sph_harmonics == 'none':
+                if (sph_harmonics == 'none'):
                     pass ## skip
                 else:
                     keep_list.append(one_var)
@@ -258,7 +261,11 @@ class starry_basemodel():
             elif one_var == 'lc_eval':
                 ## skip the lighcurve deterministic variable
                 pass
-            
+            elif one_var == 'sigma_lc':
+                if include_sigma_lc == True:
+                    keep_list.append(one_var)
+                else:
+                    pass
             elif (one_var in gp_vars):
                 if include_GP == True:
                     keep_list.append(one_var)
@@ -284,17 +291,50 @@ class starry_basemodel():
         
         return truths
     
-    def prep_corner(self):
+    def prep_corner(self,sph_harmonics='all',
+                    include_sigma_lc=True):
+        """
+        Prepare the data that a corner plot needs
+                    
+        Parameters
+        ----------
+        sph_harmonics: str
+            pass to ::code::`select_plot_variables`
+            "m=1" will choose only m=1 sph harmonics
+        include_sigma_lc: bool
+            pass to ::code::`select_plot_variables`
+        """
         
         if hasattr(self,'trace') == False:
             self.find_posterior()
         
-        varnames = self.select_plot_variables(sph_harmonics='all')
+        varnames = self.select_plot_variables(sph_harmonics=sph_harmonics,
+                                              include_sigma_lc=include_sigma_lc)
         
-        samples = pm.trace_to_dataframe(self.trace, varnames=varnames)
+        
+        samples_all = pm.trace_to_dataframe(self.trace, varnames=varnames)
         
         ## the trace_to_dataframe splits up arrays of variables
-        final_varlist = list(samples.keys())
+        keys_varlist = list(samples_all.keys())
+        
+        ## A fairly complicated way to select the m=1 spherical harmonics
+        ## and all other variables that came from select_plot_variables
+        if sph_harmonics == 'm=1':
+            final_varlist = []
+            ells, ems = get_l_and_m_lists(self.degree)
+            for one_var in keys_varlist:
+                if 'sec_y__' in one_var:
+                    ind = int(one_var.split('sec_y__')[1])
+                    if ems[ind] == 1:
+                        final_varlist.append(one_var)
+                    else:
+                        pass
+                else:
+                    final_varlist.append(one_var)
+        else:
+            final_varlist = keys_varlist
+        
+        samples = samples_all[final_varlist]
         
         truths = self.get_truths(final_varlist)
         labels = label_converter(final_varlist)
@@ -331,6 +371,15 @@ def ylm_labels(degree):
             labels.append(oneLabel)
     return labels
 
+def get_l_and_m_lists(degree):
+    ells = []
+    ems = []
+    for l in range(1,degree+1):
+        for m in range(-l,l+1):
+            ells.append(l)
+            ems.append(m)
+    return ells,ems
+
 def label_converter(varList):
     """
     Convert the labels from the trace into ones for plotting
@@ -353,16 +402,82 @@ def label_converter(varList):
     return outList
     
 
-def compare_corners(sb1,sb2):
+def compare_corners(sb1,sb2,sph_harmonics='all',
+                    include_sigma_lc=True,
+                    extra_descrip=''):
+    """
+    sb1: starry_basemodel object
+        First object to grab a corner for
+    sb2: starry_basemodel object
+        Second object to grab a corner for
+        Try putting the one with widest posteriors here
+    sph_harmonics: str
+        Which spherical harmonics to include?
+    include_sigma_lc: bool
+        Show posterior for the sigma of the lightcurve
+    extra_descrip: str
+        Extra description for plot filename
+    """
     
-    samples1, truths1, labels1 = sb1.prep_corner()
-    samples2, truths2, labels2 = sb2.prep_corner()
+    
+    samples1, truths1, labels1 = sb1.prep_corner(sph_harmonics=sph_harmonics,
+                                                include_sigma_lc=include_sigma_lc)
+    samples2, truths2, labels2 = sb2.prep_corner(sph_harmonics=sph_harmonics,
+                                                include_sigma_lc=include_sigma_lc)
     fig1 = corner.corner(samples1,truths=truths1,
                         color='green')
     fig2 = corner.corner(samples2,truths=truths2,
                         color='red',fig=fig1,labels=labels2)
-    fig1.savefig('plots/corner/comparison_{}_vs_{}.png'.format(sb1.descrip[0:20],sb2.descrip[0:20]))
+    file_descrip = '{}{}_vs_{}'.format(extra_descrip,sb1.descrip[0:20],sb2.descrip[0:20])
+    fig1.savefig('plots/corner/comparison_{}.png'.format(file_descrip))
     plt.close(fig1)
+
+def compare_histos(sb1,sb2=None,sph_harmonics='all',
+                   include_sigma_lc=True,
+                   extra_descrip='',
+                   dataDescrips=['Baseline Trend','Flat']):
+    samples1, truths1, labels1 = sb1.prep_corner(sph_harmonics=sph_harmonics,
+                                                include_sigma_lc=include_sigma_lc)
+    samples2, truths2, labels2 = sb2.prep_corner(sph_harmonics=sph_harmonics,
+                                                include_sigma_lc=include_sigma_lc)
+    nrows = sb1.degree + 2
+    ncols = 2 * sb1.degree + 1
+    midX = sb1.degree
+    fig, axArr = plt.subplots(nrows,ncols,figsize=(10,8))
+    extra_plot_counter = 0
+    keys1 = samples1.keys()
+    
+    for row in range(nrows):
+        for col in range(ncols):
+            axArr[row,col].axis('off')
+    
+    plt.subplots_adjust(hspace=0.75)
+    
+    for ind,oneLabel in enumerate(labels1):
+        ## figure out where to the put the plot
+        if oneLabel == 'amp':
+            ax = axArr[0,midX]
+        elif r'$Y_' in oneLabel:
+            ell_txt, em_txt = oneLabel.split('{')[1].split('}')[0].split(',')
+            ell, em = int(ell_txt), int(em_txt)
+            ax = axArr[ell,em + midX]
+        else:
+            ax = axArr[sb1.degree + 1,extra_plot_counter]
+        ax.axis('on')
+        ax.yaxis.set_visible(False)
+        ax.hist(samples1[keys1[ind]],histtype='step',color='red',linewidth=2)
+        ax.hist(samples2[keys1[ind]],histtype='step',color='green',linewidth=2)
+        
+        ax.set_title(oneLabel)
+    
+    axArr[0,0].text(0,0,dataDescrips[0],color='red')
+    axArr[0,0].text(0,1,dataDescrips[1],color='green')
+    axArr[0,0].set_ylim(0,2)
+    
+    outPath = 'plots/histos/comparison_histo.pdf'
+    fig.savefig(outPath,bbox_inches='tight')
+    print("Saved figure to {}".format(outPath))
+    plt.close(fig)
 
 def check_lognorm_prior(variable='rho'):
     
