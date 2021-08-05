@@ -1,6 +1,10 @@
 .ipynb_checkpoints/
-*.ipynb
 __pycache__/
+EclipsingBinary_Generate.ipynb
+EclipsingBinary_Linear.ipynb
+check_full_phase_curve_precision.ipynb
+check_higher_time_res.ipynb
+spatial_resolution_telescope_size.ipynb
 *.npz
 plots/*.pdf
 plots/*/*.pdf
