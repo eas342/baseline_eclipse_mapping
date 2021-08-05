@@ -468,6 +468,8 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
         ax.hist(samples1[keys1[ind]],histtype='step',color='red',linewidth=2)
         ax.hist(samples2[keys1[ind]],histtype='step',color='green',linewidth=2)
         
+        ax.axvline(truths1[ind],color='blue',linestyle='dashed')
+        
         ax.set_title(oneLabel)
     
     axArr[0,0].text(0,0,dataDescrips[0],color='red')
@@ -529,4 +531,3 @@ def plot_sph_harm_lc():
         outPath = os.path.join('plots','sph_harm_lc','lc_{:03d}.pdf'.format(ind),)
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
-        
