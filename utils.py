@@ -371,10 +371,10 @@ def ylm_labels(degree):
             labels.append(oneLabel)
     return labels
 
-def get_l_and_m_lists(degree):
+def get_l_and_m_lists(degree,startDeg=1):
     ells = []
     ems = []
-    for l in range(1,degree+1):
+    for l in range(startDeg,degree+1):
         for m in range(-l,l+1):
             ells.append(l)
             ems.append(m)
@@ -510,24 +510,78 @@ def check_lognorm_prior(variable='rho'):
     fig.savefig('plots/prior_checks/{}_check_001.pdf'.format(variable))
     
     
-def plot_sph_harm_lc():
+def plot_sph_harm_lc(onePlot=True):
+    """
+    Plot the lightcurves for all spherical harmonics
+    
+    Parameters
+    ----------
+    onePlot: bool
+        Put them all in one plot?
+    """
     sb = starry_basemodel(dataPath='sim_data/sim_data_baseline.ecsv',
                           descrip='Orig_006_newrho_smallGP',
                           map_type='variable',amp_type='variable',
                           systematics='Cubic',use_gp=False,degree=3)
     sb.find_design_matrix()
     
+    
+    if onePlot == True:
+        nrows = sb.degree + 1
+        ncols = 2 * sb.degree + 1
+        midX = sb.degree
+        fig, axArr = plt.subplots(nrows,ncols,figsize=(14,8))
+        
+        for row in range(nrows):
+            for col in range(ncols):
+                axArr[row,col].axis('off')
+    
+        #plt.subplots_adjust(hspace=0.55)
+    
+    
     titles = ylm_labels(sb.degree)
-    titles.insert(0,'amp')
-    titles.insert(0,'flat')
+    ells, ems = get_l_and_m_lists(sb.degree,startDeg=0)
+    ## put in the zero term since we are using for amplitude
+    
+    titles.insert(0,'amp') ## put in the amp term
+    titles.insert(0,'flat') ## the first one is flat
     
     nterms = len(titles)
     for ind in range(nterms):
-        fig, ax = plt.subplots(figsize=(4,4))
-        ax.plot(sb.x,sb.A[:,ind])
-        ax.set_xlabel("Time")
-        ax.set_ylabel("Flux")
-        ax.set_title(titles[ind])
-        outPath = os.path.join('plots','sph_harm_lc','lc_{:03d}.pdf'.format(ind),)
+        if titles[ind] == 'flat':
+            pass
+        else:
+            if onePlot == True:
+                ell, em = ells[ind - 1], ems[ind - 1]
+                ax = axArr[ell,em + midX]
+                ax.axis('on')
+                if (em == 0) and (ell == 0):
+                    ## Show Y axis just for top plot
+                    ax.yaxis.set_visible(True)
+                else:
+                    ## Shox X axis just for bottom middle plot
+                    ax.yaxis.set_visible(False)
+                if (em == 0) and (ell == sb.degree):
+                    ax.xaxis.set_visible(True)
+                else:
+                    ax.xaxis.set_visible(False)
+            else:
+                fig, ax = plt.subplots(figsize=(4,4))
+            ax.plot(sb.x,sb.A[:,ind])
+            ax.set_xlabel("Time")
+            ax.set_ylabel("Flux")
+            ax.set_title(titles[ind])
+        
+            if onePlot == True:
+                pass
+            else:
+                outPath = os.path.join('plots','sph_harm_lc','lc_{:03d}.pdf'.format(ind))
+                fig.savefig(outPath,bbox_inches='tight')
+                plt.close(fig)
+    
+    if onePlot == True:
+        outPath = os.path.join('plots','sph_harm_lc_single_plot','all_sph_lc.pdf')
+        print("Saving plot to {}".format(outPath))
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
+        
