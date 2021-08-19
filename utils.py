@@ -435,7 +435,7 @@ def compare_corners(sb1,sb2,sph_harmonics='all',
 def compare_histos(sb1,sb2=None,sph_harmonics='all',
                    include_sigma_lc=True,
                    extra_descrip='',
-                   dataDescrips=['Baseline Trend','Flat']):
+                   dataDescrips=['Flat','Baseline Trend']):
     samples1, truths1, labels1 = sb1.prep_corner(sph_harmonics=sph_harmonics,
                                                 include_sigma_lc=include_sigma_lc)
     samples2, truths2, labels2 = sb2.prep_corner(sph_harmonics=sph_harmonics,
@@ -465,15 +465,15 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
             ax = axArr[sb1.degree + 1,extra_plot_counter]
         ax.axis('on')
         ax.yaxis.set_visible(False)
-        ax.hist(samples1[keys1[ind]],histtype='step',color='red',linewidth=2)
-        ax.hist(samples2[keys1[ind]],histtype='step',color='green',linewidth=2)
+        ax.hist(samples1[keys1[ind]],histtype='step',color='green',linewidth=2)
+        ax.hist(samples2[keys1[ind]],histtype='step',color='red',linewidth=2)
         
         ax.axvline(truths1[ind],color='blue',linestyle='dashed')
         
         ax.set_title(oneLabel)
     
-    axArr[0,0].text(0,0,dataDescrips[0],color='red')
-    axArr[0,0].text(0,1,dataDescrips[1],color='green')
+    axArr[0,0].text(0,0,dataDescrips[0],color='green')
+    axArr[0,0].text(0,1,dataDescrips[1],color='red')
     axArr[0,0].set_ylim(0,2)
     
     outPath = 'plots/histos/comparison_histo.pdf'
