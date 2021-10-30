@@ -12,3 +12,9 @@ plots/*/*.png
 plots/forward_model/forward_mod.tex
 fit_data/traces/*/*/*.json
 *.pyc
+calculate_hd189_eclipse_depths.ipynb
+check_spherical_harmonic_amplitudes.ipynb
+exploratory_noteboks/*.ipynb
+map_with_spitzer.ipynb
+modifications_to_the_more_physical_priors_OLD/
+real_data/light_curve.sav
