@@ -13,7 +13,7 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb.plot_lc(point='mxap')
 
 def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
-                                  super_giant_corner=False):
+                                  super_giant_corner=False,lc_name='NC_HD189'):
     """
     Try fitting a lightcurve with a flat baseline vs curved
     
@@ -26,12 +26,19 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         Save the super giant corner plots?
         These can take a long time, so they can be skipped by changing to False
     """
-    systematics=['Flat','Cubic']
-    descrips = ['Flat_001','Orig_006_newrho_smallGP']
+    if lc_name == 'NC_HD189':
+        systematics=['Flat','Quadratic']
+        descrips = ['flat_HD189NC','quad_HD189NC']
+        dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
+    else:
+        systematics=['Flat','Cubic']
+        descrips = ['Flat_001','Orig_006_newrho_smallGP']
+        dataPath='sim_data/sim_data_baseline.ecsv'
     
     sb_list = []
     for ind,sys_type in enumerate(systematics):
-        sb = utils.starry_basemodel(descrip=descrips[ind],
+        sb = utils.starry_basemodel(dataPath=dataPath,
+                                    descrip=descrips[ind],
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type)
         sb.plot_lc(point='mxap')
@@ -49,8 +56,8 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                           extra_descrip='m_eq_1_')
     utils.compare_histos(sb_list[0],sb_list[1])
     
-def run_inference():
-    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True)
+def run_inference(lc_name='NC_HD189'):
+    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,lc_name=lc_name)
 
 
     

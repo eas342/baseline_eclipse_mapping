@@ -56,12 +56,12 @@ class starry_basemodel():
         #self.tref = np.round(np.min(self.dat['Time (days)']))
         self.x = np.ascontiguousarray(self.dat['Time (days)'])# - self.tref)
         
-        if self.systematics == 'Cubic':
+        if (self.systematics == 'Cubic') | (self.systematics == 'Quadratic'):
             self.y = np.ascontiguousarray(self.dat['Flux'])
         elif self.systematics == 'Flat':
             self.y = np.ascontiguousarray(self.dat['Flux before Baseline'])
         else:
-            raise Exception("Unrecognized Lightcurve {}".format())
+            raise Exception("Unrecognized Lightcurve {}".format(self.systematics))
         
         self.yerr = np.ascontiguousarray(self.dat['Flux err'])
         self.meta = self.dat.meta
