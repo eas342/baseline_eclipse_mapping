@@ -476,7 +476,7 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
     axArr[0,0].text(0,1,dataDescrips[1],color='red')
     axArr[0,0].set_ylim(0,2)
     
-    outPath = 'plots/histos/comparison_histo.pdf'
+    outPath = 'plots/histos/comparison_histo_{}_{}.pdf'.format(sb1.descrip,sb2.descrip)
     fig.savefig(outPath,bbox_inches='tight')
     print("Saved figure to {}".format(outPath))
     plt.close(fig)
