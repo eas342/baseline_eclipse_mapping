@@ -28,7 +28,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     """
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
-        descrips = ['flat_HD189NC','quad_HD189NC']
+        descrips = ['flat_HD189NCphys','quad_HD189NCphys']
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     else:
         systematics=['Flat','Cubic']

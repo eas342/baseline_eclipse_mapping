@@ -90,6 +90,14 @@ class starry_basemodel():
             sec_cov = 0.5**2 * np.eye(ncoeff)
             if self.map_type == 'variable':
                 b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,))
+                
+                
+            # Add another constraint that the map should be physical
+            map_evaluate = b_map.render(projection='rect',res=100)
+            min_val = pm.minimum(map_evaluate)
+            pm.Potential('nonneg_map', pm.math.switch(pm.math.gt(min_val, 0),0,-np.inf))
+            
+            map_mins.append(np.min(map_evaluate))
             # sec_mu = np.zeros(b_map.Ny)
             # sec_mu[0] = 1e-3
             # sec_L = np.zeros(b_map.Ny)
