@@ -79,7 +79,7 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                b_map.amp = pm.Normal("amp", mu=1e-3, sd=1e-3)
+                b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
             elif 'fixedAt' in self.amp_type:
                 b_map.amp = float(self.amp_type.split("fixedAt")[1])
             else:
@@ -94,10 +94,12 @@ class starry_basemodel():
                 
             # Add another constraint that the map should be physical
             map_evaluate = b_map.render(projection='rect',res=100)
-            min_val = pm.minimum(map_evaluate)
-            pm.Potential('nonneg_map', pm.math.switch(pm.math.gt(min_val, 0),0,-np.inf))
+            ## number of points that are less than zero
+            num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
+            lt_zero_check = pm.math.gt(num_bad, 0)
+            switch = pm.math.switch(lt_zero_check,0,-np.inf)
+            pm.Potential('nonneg_map', switch)
             
-            map_mins.append(np.min(map_evaluate))
             # sec_mu = np.zeros(b_map.Ny)
             # sec_mu[0] = 1e-3
             # sec_L = np.zeros(b_map.Ny)
