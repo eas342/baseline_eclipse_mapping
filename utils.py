@@ -96,9 +96,12 @@ class starry_basemodel():
             map_evaluate = b_map.render(projection='rect',res=100)
             ## number of points that are less than zero
             num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
-            lt_zero_check = pm.math.gt(num_bad, 0)
-            switch = pm.math.switch(lt_zero_check,0,-np.inf)
-            pm.Potential('nonneg_map', switch)
+            ## check if there are any "bad" points less than zero
+            badmap_check = pm.math.gt(num_bad, 0)
+            ## Set log probability to negative infinity if there are bad points. Otherwise set to 0.
+            switch = pm.math.switch(badmap_check,-np.inf,0)
+            ## Assign a potential to avoid these maps
+            nonneg_map = pm.Potential('nonneg_map', switch)
             
             # sec_mu = np.zeros(b_map.Ny)
             # sec_mu[0] = 1e-3
