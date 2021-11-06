@@ -13,9 +13,14 @@ import pymc3_ext as pmx
 import corner
 import os
 import pdb
+import logging
 
 starry.config.lazy = True
 starry.config.quiet = True
+
+## Ignore some warnings that come up every time with the gaussian processes
+theano_logger_tensor_opt = logging.getLogger("theano.tensor.opt")
+theano_logger_tensor_opt.setLevel(logging.CRITICAL) 
 
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
@@ -203,6 +208,11 @@ class starry_basemodel():
         
             with self.model:
                 soln1 = pmx.optimize(vars=[self.model.amp])
+                if self.use_gp == True:
+                    gp_vars = [self.model.sigma_gp,
+                               self.model.rho_gp]
+                    
+                    soln1 = pmx.optimize(start=soln1,vars=gp_vars)
                 self.mxap_soln =pmx.optimize(start=soln1)
             
             np.savez(self.mxap_path,**self.mxap_soln)
