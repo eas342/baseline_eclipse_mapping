@@ -79,7 +79,7 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
+                b_map.amp = pm.Normal("amp", mu=1.8e-3, sd=0.5e-3)
             elif 'fixedAt' in self.amp_type:
                 b_map.amp = float(self.amp_type.split("fixedAt")[1])
             else:
@@ -88,8 +88,10 @@ class starry_basemodel():
             ncoeff = b_map.Ny - 1
             sec_mu = np.zeros(ncoeff)
             sec_cov = 0.5**2 * np.eye(ncoeff)
+            sec_testval = np.ones(ncoeff) * 0.05
             if self.map_type == 'variable':
-                b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,))
+                b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
+                                          testval=sec_testval)
                 
                 
             # Add another constraint that the map should be physical
@@ -200,7 +202,8 @@ class starry_basemodel():
                 self.build_model()
         
             with self.model:
-                self.mxap_soln =pmx.optimize()
+                soln1 = pmx.optimize(vars=[self.model.amp])
+                self.mxap_soln =pmx.optimize(start=soln1)
             
             np.savez(self.mxap_path,**self.mxap_soln)
         
