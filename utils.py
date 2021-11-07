@@ -84,7 +84,7 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                b_map.amp = pm.Normal("amp", mu=1.8e-3, sd=0.5e-3)
+                b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
             elif 'fixedAt' in self.amp_type:
                 b_map.amp = float(self.amp_type.split("fixedAt")[1])
             else:
@@ -139,8 +139,8 @@ class starry_basemodel():
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
             if self.use_gp == True:
-                sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(15e-6), sigma=0.5)
-                rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5)
+                sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(1e-1), sigma=0.5,testval=0.5)
+                rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5,testval=80.)
                 #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
                 #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
             
