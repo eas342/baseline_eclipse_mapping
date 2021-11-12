@@ -116,9 +116,14 @@ class starry_basemodel():
             # sec_L[0] = (0.2 * sec_mu[0])**2 ## covariance is squared
             # sec_L[1:] = (0.5 * sec_mu[0])**2
             
+            if 'M_planet' in self.meta:
+                M_planet = self.meta['M_planet']
+            else:
+                M_planet = 0.0
+            
             # b_map.set_prior(mu=sec_mu, L=sec_L)
             b = starry.kepler.Secondary(b_map,
-                                        m=0.0,
+                                        m=M_planet,
                                         r=self.meta['rp'],
                                         prot=self.meta['Period'],
                                         porb=self.meta['Period'],
