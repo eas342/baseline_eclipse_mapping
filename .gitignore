@@ -18,3 +18,4 @@ exploratory_noteboks/*.ipynb
 map_with_spitzer.ipynb
 modifications_to_the_more_physical_priors_OLD/
 real_data/light_curve.sav
+sim_data/resids_from_mirage_sim.ecsv
