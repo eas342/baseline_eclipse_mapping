@@ -1,0 +1,1 @@
+# Spherical Harmonic Maps Directory
