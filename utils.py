@@ -14,6 +14,7 @@ import corner
 import os
 import pdb
 import logging
+import theano.tensor as tt
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -612,6 +613,92 @@ def plot_sph_harm_lc(onePlot=True):
     
     if onePlot == True:
         outPath = os.path.join('plots','sph_harm_lc_single_plot','all_sph_lc.pdf')
+        print("Saving plot to {}".format(outPath))
+        fig.savefig(outPath,bbox_inches='tight')
+        plt.close(fig)
+        
+def plot_sph_harm_maps(degree=3,onePlot=True):
+    """
+    Plot the maps for all spherical harmonics
+    
+    Parameters
+    ----------
+    onePlot: bool
+        Put them all in one plot?
+    """
+    
+    b_map = starry.Map(ydeg=degree)
+    b_map.amp = 1.0
+    
+    ncoeff = b_map.Ny - 1
+    
+    if onePlot == True:
+        nrows = degree + 1
+        ncols = 2 * degree + 1
+        midX = degree
+        fig, axArr = plt.subplots(nrows,ncols,figsize=(14,8))
+        
+        for row in range(nrows):
+            for col in range(ncols):
+                axArr[row,col].axis('off')
+    
+        #plt.subplots_adjust(hspace=0.55)
+    
+    
+    titles = ylm_labels(degree)
+    ells, ems = get_l_and_m_lists(degree,startDeg=0)
+    ## put in the zero term since we are using for amplitude
+    
+    titles.insert(0,'amp') ## put in the amp term
+    titles.insert(0,'flat') ## the first one is flat
+    
+    nterms = len(titles)
+    for ind in range(nterms):
+        if titles[ind] == 'flat':
+            pass
+        else:
+            ell, em = ells[ind - 1], ems[ind - 1]
+            if onePlot == True:
+                
+                ax = axArr[ell,em + midX]
+                ax.axis('on')
+                if (em == 0) and (ell == 0):
+                    ## Show Y axis just for top plot
+                    ax.yaxis.set_visible(True)
+                else:
+                    ## Shox X axis just for bottom middle plot
+                    ax.yaxis.set_visible(False)
+                if (em == 0) and (ell == degree):
+                    ax.xaxis.set_visible(True)
+                else:
+                    ax.xaxis.set_visible(False)
+            else:
+                fig, ax = plt.subplots(figsize=(4,4))
+            
+            b_map[1:,:] = 0
+            #b_map.y[1:] = np.zeros(degree**2 -1)
+            #tt.set_subtensor(b_map.y[1:],np.zeros(degree**2 -1))
+            if ell == 0:
+                b_map.amp = 1.0
+            else:
+                b_map.amp = 1e-7
+                ## make the sph harmonic amplitude extra large to emphasize the sph harmonic of interest
+                ## and the amplitude term will be negligible
+                b_map[ell,em] = 1e7
+            
+            b_map.show(projection='ortho',ax=ax)
+            
+            ax.set_title(titles[ind])
+        
+            if onePlot == True:
+                pass
+            else:
+                outPath = os.path.join('plots','sph_harm_map_ind','map_{:03d}.pdf'.format(ind))
+                fig.savefig(outPath,bbox_inches='tight')
+                plt.close(fig)
+    
+    if onePlot == True:
+        outPath = os.path.join('plots','sph_harm_maps_comb','all_sph_maps.pdf')
         print("Saving plot to {}".format(outPath))
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
