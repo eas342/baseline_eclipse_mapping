@@ -13,7 +13,8 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb.plot_lc(point='mxap')
 
 def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
-                                  super_giant_corner=False,lc_name='NC_HD189'):
+                                  super_giant_corner=False,lc_name='NC_HD189',
+                                  map_prior='physical'):
     """
     Try fitting a lightcurve with a flat baseline vs curved
     
@@ -28,7 +29,11 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     """
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
-        descrips = ['flat_HD189NCphysPMass','quad_HD189NCphysPMass']
+        if map_prior == 'physical':
+            descrips = ['flat_HD189NCphysPMass','quad_HD189NCphysPMass']
+        else:
+            descrips = ['flat_HD189NCnophysPMass','quad_HD189NCnophysPMass']
+        
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     else:
         systematics=['Flat','Cubic']
@@ -56,8 +61,9 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                           extra_descrip='m_eq_1_')
     utils.compare_histos(sb_list[0],sb_list[1])
     
-def run_inference(lc_name='NC_HD189'):
-    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,lc_name=lc_name)
+def run_inference(lc_name='NC_HD189',map_prior='physical'):
+    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
+                                  lc_name=lc_name,map_prior=map_prior)
 
 
     

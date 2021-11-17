@@ -28,7 +28,7 @@ class starry_basemodel():
                  descrip='Orig_006_newrho_smallGP',
                  map_type='variable',amp_type='variable',
                  systematics='Cubic',use_gp=True,
-                 degree=3):
+                 degree=3,map_prior='physical'):
         """
         Set up a starry model
         
@@ -54,6 +54,7 @@ class starry_basemodel():
         
         self.data_path = dataPath
         self.get_data(path=self.data_path)
+        self.map_prior = map_prior
     
     def get_data(self,path):
         """ Gather the data
@@ -99,17 +100,18 @@ class starry_basemodel():
                 b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
                                           testval=sec_testval)
                 
-                
-            # Add another constraint that the map should be physical
-            map_evaluate = b_map.render(projection='rect',res=100)
-            ## number of points that are less than zero
-            num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
-            ## check if there are any "bad" points less than zero
-            badmap_check = pm.math.gt(num_bad, 0)
-            ## Set log probability to negative infinity if there are bad points. Otherwise set to 0.
-            switch = pm.math.switch(badmap_check,-np.inf,0)
-            ## Assign a potential to avoid these maps
-            nonneg_map = pm.Potential('nonneg_map', switch)
+            if self.map_prior == 'physical':
+                # Add another constraint that the map should be physical
+                map_evaluate = b_map.render(projection='rect',res=100)
+                ## number of points that are less than zero
+                num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
+                ## check if there are any "bad" points less than zero
+                badmap_check = pm.math.gt(num_bad, 0)
+                ## Set log probability to negative infinity if there are bad points. Otherwise set to 0.
+                switch = pm.math.switch(badmap_check,-np.inf,0)
+                ## Assign a potential to avoid these maps
+                nonneg_map = pm.Potential('nonneg_map', switch)
+            
             
             # sec_mu = np.zeros(b_map.Ny)
             # sec_mu[0] = 1e-3
