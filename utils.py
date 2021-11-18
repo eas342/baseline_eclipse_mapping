@@ -637,14 +637,21 @@ def plot_sph_harm_lc(onePlot=True):
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
         
-def plot_sph_harm_maps(degree=3,onePlot=True):
+def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
     """
     Plot the maps for all spherical harmonics
     
     Parameters
     ----------
+    degree: int
+        Spherical harmonic degree
+    
     onePlot: bool
         Put them all in one plot?
+    
+    highlightm1: bool
+        Highlight the m=1 spherical harmonics? (only works when onePlot is True)
+    
     """
     
     b_map = starry.Map(ydeg=degree)
@@ -711,6 +718,12 @@ def plot_sph_harm_maps(degree=3,onePlot=True):
             ax.set_title(titles[ind])
         
             if onePlot == True:
+                # if (highlightm1 == True) & (em == 1):
+                #     ax.plot(np.array([-1,-1,1, 1,-1]) * 1.1,
+                #             np.array([-1, 1,1,-1,-1]) * 1.1,
+                #             color='black',linewidth=2)
+                # else:
+                #     pass
                 pass
             else:
                 outPath = os.path.join('plots','sph_harm_map_ind','map_{:03d}.pdf'.format(ind))
@@ -718,7 +731,22 @@ def plot_sph_harm_maps(degree=3,onePlot=True):
                 plt.close(fig)
     
     if onePlot == True:
-        outPath = os.path.join('plots','sph_harm_maps_comb','all_sph_maps.pdf')
+        if highlightm1 == True:
+            extra_descrip = '_highlightm1'
+            
+            
+            rect = plt.Rectangle(
+                # (lower-left corner), width, height
+                (0.57, 0.1), 0.12, 0.65, fill=False, color="k", lw=2, 
+                zorder=100, transform=fig.transFigure, figure=fig
+            )
+            fig.patches.extend([rect])
+            
+        else:
+            extra_descrip = ''
+        
+        outName = 'all_sph_maps{}.pdf'.format(extra_descrip)
+        outPath = os.path.join('plots','sph_harm_maps_comb',outName)
         print("Saving plot to {}".format(outPath))
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
