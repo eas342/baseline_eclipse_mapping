@@ -36,6 +36,11 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     degree: int
         The spherical harmonic degree
     """
+    if degree == 3:
+        degree_descrip = ''
+    else:
+        degree_descrip = '_deg{}'.format(degree)
+    
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
         systematics_abbrev = ['flat','quad']
