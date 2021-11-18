@@ -59,11 +59,11 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         systematics=['Flat','Cubic']
         
         
-        descrips_basename = ['Flat_001','Orig_006_newrho_smallGP']
+        descrips_basenames = ['Flat_001','Orig_006_newrho_smallGP']
         if map_prior == 'physical':
             phys_descrip = 'phys'
         else:
-            phys_descrip = ''
+            phys_descrip = 'nophys'
         
         descrips = []
         for descrip_basename in descrips_basenames:
