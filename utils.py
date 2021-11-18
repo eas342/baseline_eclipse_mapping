@@ -31,7 +31,25 @@ class starry_basemodel():
                  degree=3,map_prior='physical'):
         """
         Set up a starry model
-        
+        dataPath: str
+            Path to the lightcurve data .ecsv file
+        descrip: str
+            Description of the model/inference
+        map_type: str
+            Map type "fixed" fixes it at uniform. "variable" solves for sph harmonics
+        amp_type: str
+            What prior for the amplitude? Variable allows it to float, 'fixedAt1e-3' fixes it
+                 as 1e-3
+        systematics: str
+            What kind of systematics were modeled? This is just used in the description
+        use_gp: bool
+            Use a Gaussian process to model systematics?                 
+        degree: int
+            The spherical harmonic degree
+        map_prior: str
+            What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+            'non-physical' allows the spherical harmonics to be postive or negative
+    
         """
         
         

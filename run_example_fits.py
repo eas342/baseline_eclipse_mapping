@@ -14,7 +14,7 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
 
 def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                                   super_giant_corner=False,lc_name='NC_HD189',
-                                  map_prior='physical'):
+                                  map_prior='physical',degree=3):
     """
     Try fitting a lightcurve with a flat baseline vs curved
     
@@ -26,13 +26,28 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     super_giant_corner: bool
         Save the super giant corner plots?
         These can take a long time, so they can be skipped by changing to False
+    lc_name: str
+        Name of the lightcurve ('NC_HD189' uses a NIRCam lightcurve for HD 189733)
+                                 'orig' is the original lightcurve at high precision
+    map_prior: str
+        What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+        'non-physical' allows the spherical harmonics to be postive or negative
+    
+    degree: int
+        The spherical harmonic degree
     """
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
+        systematics_abbrev = ['flat','quad']
         if map_prior == 'physical':
-            descrips = ['flat_HD189NCphysPMass','quad_HD189NCphysPMass']
+            phys_descrip = 'phys'
         else:
-            descrips = ['flat_HD189NCnophysPMass','quad_HD189NCnophysPMass']
+            phys_descrip = 'nophys'
+        
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_HD189NC{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     else:
@@ -45,7 +60,8 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         sb = utils.starry_basemodel(dataPath=dataPath,
                                     descrip=descrips[ind],
                                     map_type=map_type,amp_type='variable',
-                                    systematics=sys_type)
+                                    systematics=sys_type,degree=degree,
+                                    map_prior=map_prior)
         sb.plot_lc(point='mxap')
         if find_posterior == True:
             sb.find_posterior()
@@ -61,9 +77,10 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                           extra_descrip='m_eq_1_')
     utils.compare_histos(sb_list[0],sb_list[1])
     
-def run_inference(lc_name='NC_HD189',map_prior='physical'):
+def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
-                                  lc_name=lc_name,map_prior=map_prior)
+                                  lc_name=lc_name,map_prior=map_prior,
+                                  degree=degree)
 
 
     
