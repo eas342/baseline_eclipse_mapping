@@ -52,7 +52,18 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     else:
         systematics=['Flat','Cubic']
-        descrips = ['Flat_001','Orig_006_newrho_smallGP']
+        
+        
+        descrips_basename = ['Flat_001','Orig_006_newrho_smallGP']
+        if map_prior == 'physical':
+            phys_descrip = 'phys'
+        else:
+            phys_descrip = ''
+        
+        descrips = []
+        for descrip_basename in descrips_basenames:
+            descrips.append("{}{}".format(descrip_basename,phys_descrip))
+        
         dataPath='sim_data/sim_data_baseline.ecsv'
     
     sb_list = []
@@ -81,8 +92,6 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
                                   lc_name=lc_name,map_prior=map_prior,
                                   degree=degree)
-
-
     
 
 if __name__ == "__main__":
