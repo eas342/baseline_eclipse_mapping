@@ -43,7 +43,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
-        systematics_abbrev = ['flat','quad']
+        systematics_abbrev = ['flat_no_gp','quad']
         if map_prior == 'physical':
             phys_descrip = 'phys'
         else:
@@ -59,7 +59,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         systematics=['Flat','Cubic']
         
         
-        descrips_basenames = ['Flat_001','Orig_006_newrho_smallGP']
+        descrips_basenames = ['Flat_001_no_gp','Orig_006_newrho_smallGP']
         if map_prior == 'physical':
             phys_descrip = 'phys'
         else:
@@ -71,13 +71,15 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         
         dataPath='sim_data/sim_data_baseline.ecsv'
     
+    use_gp_list = [False,True]
+    
     sb_list = []
     for ind,sys_type in enumerate(systematics):
         sb = utils.starry_basemodel(dataPath=dataPath,
                                     descrip=descrips[ind],
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type,degree=degree,
-                                    map_prior=map_prior)
+                                    map_prior=map_prior,use_gp=use_gp_list[ind])
         sb.plot_lc(point='mxap')
         if find_posterior == True:
             sb.find_posterior()
