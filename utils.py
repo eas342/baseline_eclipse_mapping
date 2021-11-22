@@ -104,16 +104,26 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
+                if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
+                    b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
+                else:
+                    b_map.amp = pm.Normal("amp", mu=1.0e-3, sd=0.2e-3)
+                
             elif 'fixedAt' in self.amp_type:
                 b_map.amp = float(self.amp_type.split("fixedAt")[1])
             else:
                 b_map.amp = 1e-3
             
             ncoeff = b_map.Ny - 1
-            sec_mu = np.zeros(ncoeff)
-            sec_cov = 0.5**2 * np.eye(ncoeff)
-            sec_testval = np.ones(ncoeff) * 0.05
+            if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
+                sec_mu = np.zeros(ncoeff)
+                sec_testval = np.ones(ncoeff) * 0.05
+                sec_cov = 0.5**2 * np.eye(ncoeff)
+            else:
+                sec_mu = np.ones(ncoeff) * 0.05
+                sec_testval = np.ones(ncoeff) * 0.05
+                sec_cov = 0.5**2 * np.eye(ncoeff)
+            
             if self.map_type == 'variable':
                 b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
                                           testval=sec_testval)
@@ -159,7 +169,7 @@ class starry_basemodel():
             resid = self.y[self.mask] - lc_eval
             
             ## estimate the standard deviation
-            sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(np.std(self.y[self.mask])), sigma=0.5)
+            sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(np.median(self.yerr)), sigma=0.5)
             
             ## estimate GP error as std
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
