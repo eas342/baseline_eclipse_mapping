@@ -8,8 +8,12 @@
 # - {name: Baseline, datatype: float64}
 # meta:
 #   Amplitude: 0.001
+#   M_planet: 0.0
+#   M_planet_units: Msun
 #   M_star: 1.0
+#   M_star_units: Msun
 #   Period: 1.0
+#   Period_units: days
 #   R_star: 1.0
 #   b_impact: !astropy.units.Quantity
 #     unit: !astropy.units.Unit {unit: ''}
@@ -18,8 +22,10 @@
 #   dur_14: 0.07484685034248201
 #   dur_23: 0.05665970843307687
 #   inc: 83
+#   inc_units: deg
 #   prot_star: 1.0
 #   rp: 0.1
+#   rp_units: Rsun
 #   t0: 0.0
 #   y_input: [0.212587193559822, 0.1875962015746607, 0.10421312437579247, 0.1048652652063154, 0.07396204094643963, -0.10988426114539027,
 #     -0.0061783184460587155, -0.06551775984748415, 0.12105423789196276, 0.15378327548573822, -0.04586185856263464, 0.05546885463911624,
