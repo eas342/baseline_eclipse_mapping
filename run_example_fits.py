@@ -41,13 +41,14 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     else:
         degree_descrip = '_deg{}'.format(degree)
     
+    if map_prior == 'physical':
+        phys_descrip = 'phys'
+    else:
+        phys_descrip = 'nophys'
+    
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
         systematics_abbrev = ['flat_no_gp','quad']
-        if map_prior == 'physical':
-            phys_descrip = 'phys'
-        else:
-            phys_descrip = 'nophys'
         
         descrips = []
         for systematics_descrip in systematics_abbrev:
@@ -58,12 +59,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     else:
         systematics=['Flat','Cubic']
         
-        
         descrips_basenames = ['Flat_001_no_gp','Orig_006_newrho_smallGP']
-        if map_prior == 'physical':
-            phys_descrip = 'phys'
-        else:
-            phys_descrip = 'nophys'
         
         descrips = []
         for descrip_basename in descrips_basenames:
