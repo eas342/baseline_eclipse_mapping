@@ -56,6 +56,16 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
             descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
+    elif lc_name == 'NC_HD189cubic':
+        systematics=['Flat','Cubic']
+        systematics_abbrev = ['flat_no_gp','cubic']
+        
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_HD189NC{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
+        
+        dataPath='sim_data/sim_data_cubic_baseline_hd189_ncF444W.ecsv'
     else:
         systematics=['Flat','Cubic']
         
