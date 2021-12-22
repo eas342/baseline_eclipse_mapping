@@ -107,6 +107,16 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   degree=degree)
     
 
+def test_map_plots():
+    dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
+    descrip = 'quad_HD189NCphysPMass'
+    sb = utils.starry_basemodel(dataPath=dataPath,
+                                descrip=descrip,
+                                map_type='variable',amp_type='variable',
+                                systematics='Quadratic',degree=3,
+                                map_prior='physical',use_gp=True)
+    return sb
+
 if __name__ == "__main__":
     run_inference()
     

@@ -418,6 +418,52 @@ class starry_basemodel():
             self.A = pmx.eval_in_model(self.sys.design_matrix(self.x))
         
     
+    def plot_random_draws(self,trace=None,n_draws=8):
+        """
+        Plot the maps for random draws
+        
+        Parameters
+        ----------
+        n_draws: int
+            How many random map draws to make?
+        
+        trace: a pymc3 trace
+            If supplied, it will plot samples from the trace. Otherwise,
+            it will calculate with pymc3. This is mainly to save time when
+            re-running to plot
+        """
+        if trace is None:
+            if hasattr(self,'trace') == False:
+                self.find_posterior()
+            trace = self.trace
+        
+        np.random.seed(0)
+        
+        fig, axArr = plt.subplots(1,n_draws)
+        
+        b_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.meta['inc'])
+        
+        n_samples = len(trace['amp'])
+        
+        for counter in np.arange(n_draws):
+            draw = np.random.randint(n_samples)
+            amp = trace['amp'][draw]
+            pl_y = trace['sec_y'][draw]
+            
+            b_map[1:, :] = pl_y
+            b_map.amp = amp
+    
+#            saveDescrip = "{}_draw_{:02d}".format(modelName,counter)
+    #        outFile_img = "plots/planet_maps/random_draws/map_{}.pdf".format(saveDescrip)
+    #        b_map.show(theta=offset,colorbar=True,ax=ax,file=outFile_img)
+            ax = axArr[counter]
+            b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True)#,file=outFile_img)
+            ax.set_title("Map Draw {}".format(counter+1),fontsize=6)
+        
+        outName = os.path.join('plots','map_draws','draws_{}.pdf'.format(self.descrip))
+        print("Saving map draws plot to {}".format(outName))
+        fig.savefig(outName,bbox_inches='tight')
+    
 def ylm_labels(degree):
     """
     Make a list of the Ylm variables for a given degree
@@ -542,6 +588,8 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
     fig.savefig(outPath,bbox_inches='tight')
     print("Saved figure to {}".format(outPath))
     plt.close(fig)
+    
+
 
 def check_lognorm_prior(variable='rho'):
     
