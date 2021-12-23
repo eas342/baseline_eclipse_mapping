@@ -418,9 +418,10 @@ class starry_basemodel():
             self.A = pmx.eval_in_model(self.sys.design_matrix(self.x))
         
     
-    def plot_random_draws(self,trace=None,n_draws=8):
+    def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
+                         res=100,projection='ortho'):
         """
-        Plot the maps for random draws
+        Plot the maps for random draws or calculate stats on them
         
         Parameters
         ----------
@@ -431,6 +432,17 @@ class starry_basemodel():
             If supplied, it will plot samples from the trace. Otherwise,
             it will calculate with pymc3. This is mainly to save time when
             re-running to plot
+        
+        calcStats: bool
+            Calculate map statistics? This will skip the plot and find 
+            statistics on the posterior map samples
+        
+        res: int
+            Resolution of the grid used by render()
+        
+        projection: str
+            Projection of the grid (e.g. 'ortho' or 'rect')
+        
         """
         if trace is None:
             if hasattr(self,'trace') == False:
@@ -439,9 +451,13 @@ class starry_basemodel():
         
         np.random.seed(0)
         
-        fig, axArr = plt.subplots(1,n_draws)
-        
         b_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.meta['inc'])
+        
+        if calcStats == True:
+            map_samples = np.zeros([n_draws,res,res])
+            lat, lon = b_map.get_latlon_grid(res=res,projection=projection)
+        else:
+            fig, axArr = plt.subplots(1,n_draws)
         
         n_samples = len(trace['amp'])
         
@@ -452,17 +468,23 @@ class starry_basemodel():
             
             b_map[1:, :] = pl_y
             b_map.amp = amp
-    
-#            saveDescrip = "{}_draw_{:02d}".format(modelName,counter)
-    #        outFile_img = "plots/planet_maps/random_draws/map_{}.pdf".format(saveDescrip)
-    #        b_map.show(theta=offset,colorbar=True,ax=ax,file=outFile_img)
-            ax = axArr[counter]
-            b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True)#,file=outFile_img)
-            ax.set_title("Map Draw {}".format(counter+1),fontsize=6)
+            
+            if calcStats == True:
+                map_object = b_map.render(res=res,projection=projection)
+                map_samples[counter] = map_object.eval()
+            else:
+                ax = axArr[counter]
+                b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True)#,file=outFile_img)
+                ax.set_title("Map Draw {}".format(counter+1),fontsize=6)
         
-        outName = os.path.join('plots','map_draws','draws_{}.pdf'.format(self.descrip))
-        print("Saving map draws plot to {}".format(outName))
-        fig.savefig(outName,bbox_inches='tight')
+        if calcStats == True:
+            self.meanMap = np.mean(map_samples,axis=0)
+            self.stdMap = np.std(map_samples,axis=0)
+        else:
+            outName = os.path.join('plots','map_draws','draws_{}.pdf'.format(self.descrip))
+            print("Saving map draws plot to {}".format(outName))
+            fig.savefig(outName,bbox_inches='tight')
+            plt.close(fig)
     
 def ylm_labels(degree):
     """
