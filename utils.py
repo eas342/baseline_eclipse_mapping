@@ -443,6 +443,10 @@ class starry_basemodel():
         projection: str
             Projection of the grid (e.g. 'ortho' or 'rect')
         
+        Outputs
+        -------
+            resultDict: dict
+                When calcStats is True, a dictionary of statistics results
         """
         if trace is None:
             if hasattr(self,'trace') == False:
@@ -456,6 +460,9 @@ class starry_basemodel():
         if calcStats == True:
             map_samples = np.zeros([n_draws,res,res])
             lat, lon = b_map.get_latlon_grid(res=res,projection=projection)
+            resultDict = {}
+            resultDict['lat'] = lat
+            resultDict['lon'] = lon
         else:
             fig, axArr = plt.subplots(1,n_draws)
         
@@ -478,13 +485,54 @@ class starry_basemodel():
                 ax.set_title("Map Draw {}".format(counter+1),fontsize=6)
         
         if calcStats == True:
-            self.meanMap = np.mean(map_samples,axis=0)
-            self.stdMap = np.std(map_samples,axis=0)
+            resultDict['meanMap'] = np.mean(map_samples,axis=0)
+            resultDict['stdMap'] = np.std(map_samples,axis=0)
+            return resultDict
         else:
             outName = os.path.join('plots','map_draws','draws_{}.pdf'.format(self.descrip))
             print("Saving map draws plot to {}".format(outName))
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
+    
+    def plot_map_statistics(self,statDict=None):
+        """
+        Plot the maps for random draws or calculate stats on them
+        
+        Parameters
+        ----------
+        statDict: dict (optional)
+            A dictionary of statistics results. This is mainly to save time when
+            re-running to plot if you already saved the dictionary
+        
+        """
+        if statDict is None:
+            statDict = self.get_random_draws(calcStats=True,n_draws=40)
+        
+        for ind,oneMap in enumerate(['Mean','Error']):
+            fig, ax = plt.subplots()
+            
+            
+            if oneMap == 'Mean':
+                outName = 'mean_{}.pdf'.format(self.descrip)
+                colorbarLabel = 'I$_p$ (ppt)'
+                keyName = 'meanMap'
+                vmin, vmax = None, None
+            else:
+                outName = 'error_{}.pdf'.format(self.descrip)
+                colorbarLabel = '$\sigma_I$ (ppt)'
+                keyName = 'stdMap'
+                vmin = np.nanmin(statDict[keyName]) * 1e3
+                vmax = 2. * np.nanmedian(statDict[keyName]) * 1e3
+            
+            im = ax.imshow(statDict[keyName] * 1e3,origin='lower',
+                           vmin=vmin,vmax=vmax)
+            ax.set_title(oneMap)
+            
+            fig.colorbar(im,label=colorbarLabel)
+            
+            outFull = os.path.join('plots','map_stats',outName)
+            print("Saving map draws plot to {}".format(outFull))
+            fig.savefig(outFull,bbox_inches='tight')
     
 def ylm_labels(degree):
     """
