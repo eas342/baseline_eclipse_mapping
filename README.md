@@ -10,7 +10,7 @@ Run the `make_eclipse_w_baseline.ipynb` notebook to generate a forward model wit
 
 The `run_example_fits.py` script does the inference.
 
-## Installation
+## Installation (worked for starry 1.2.0)
 
 It was tricky to get starry install on an M1 Mac for me.
 
@@ -42,3 +42,25 @@ The requirements file doesn't have any package version requirements so there's a
 
 		
 		pip install -r packages_that_worked.txt
+
+## Installation for Starry 1.0
+I used this to make the same forward map as earlier versions of the code. Took a lot of trial and error to get the versions right.
+
+1. Set up a x86 environment (https://github.com/Haydnspass/miniforge#rosetta-on-mac-with-apple-silicon-hardware)
+
+		CONDA_SUBDIR=osx-64 conda create -n BEMStarry1p0   # create a new environment
+		conda activate BEMStarry1p0
+		conda env config vars set CONDA_SUBDIR=osx-64
+
+2. Deactivate and reactivate to make sure the changes take hold:
+
+		conda deactivate
+		conda activate BEMStarry1p0
+
+3. Install Python
+
+		conda install python=3.6.13
+
+4. Install specific versions of the packages:
+
+		pip install -r packages_that_worked_starry1p0_python3p6p13.txt
