@@ -109,6 +109,14 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   degree=degree)
     
 
+def run_all_inference_tests():
+    """
+    Run all inference tests
+    """
+    for lc_name in ['orig','NC_HD189']:
+        run_inference(lc_name=lc_name)
+    
+
 def test_map_plots():
     dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     descrip = 'quad_HD189NCphysPMass'
