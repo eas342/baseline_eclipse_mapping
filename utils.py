@@ -525,14 +525,19 @@ class starry_basemodel():
                 vmax = 2. * np.nanmedian(statDict[keyName]) * 1e3
             
             im = ax.imshow(statDict[keyName] * 1e3,origin='lower',
-                           vmin=vmin,vmax=vmax)
+                           vmin=vmin,vmax=vmax,cmap='plasma')
             ax.set_title(oneMap)
             
             fig.colorbar(im,label=colorbarLabel)
+            #hide axes
+            ax.axis('off')
+            #ax.get_xaxis().set_visible(False)
+            #ax.get_yaxis().set_visible(False)
             
             outFull = os.path.join('plots','map_stats',outName)
             print("Saving map draws plot to {}".format(outFull))
             fig.savefig(outFull,bbox_inches='tight')
+            
     
 def ylm_labels(degree):
     """
