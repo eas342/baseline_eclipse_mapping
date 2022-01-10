@@ -48,7 +48,7 @@ I used this to make the same forward map as earlier versions of the code. Took a
 
 1. Set up a x86 environment (https://github.com/Haydnspass/miniforge#rosetta-on-mac-with-apple-silicon-hardware)
 
-		CONDA_SUBDIR=osx-64 conda create -n BEMStarry1p0   # create a new environment
+		CONDA_SUBDIR=osx-64 conda env create -n BEMStarry1p0 -f environment_starry1p0.yaml
 		conda activate BEMStarry1p0
 		conda env config vars set CONDA_SUBDIR=osx-64
 
@@ -57,10 +57,3 @@ I used this to make the same forward map as earlier versions of the code. Took a
 		conda deactivate
 		conda activate BEMStarry1p0
 
-3. Install Python
-
-		conda install python=3.6.13
-
-4. Install specific versions of the packages:
-
-		pip install -r packages_that_worked_starry1p0_python3p6p13.txt
