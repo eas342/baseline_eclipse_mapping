@@ -94,10 +94,35 @@ class hotspot_fitter(object):
         Get the projected values onto a unit sphere
         """
         self.check_for_fit()
+        latdeg = self.p_fit.y_mean.value
+        londeg = self.p_fit.x_mean.value
         
-        theta = self.p_fit.y_mean.value * np.pi/180.
-        phi = self.p_fit.x_mean.value * np.pi / 180.
-        x_proj = np.sin(phi) * np.cos(theta)
-        y_proj = np.sin(theta)
+        x_proj, y_proj = find_unit_sphere_projection(londeg,latdeg)
         return y_proj, x_proj
+
+
+def find_unit_circ_projection(londeg,latdeg):
+    """
+    Find the projection of lat/lon onto a unit circle
+    
+    Parameters
+    ----------
+    londeg: float or numpy array
+        Longitude in degrees
+    latdeg: float or numpy array
+        Latitude in degrees
+    
+    Returns
+    --------
+    x_proj: float or numpy array
+        Projected X
+    y_proj: float or numpy array
+        Projected Y
+    """
+    
+    theta = latdeg * np.pi/180.
+    phi = londeg * np.pi / 180.
+    x_proj = np.sin(phi) * np.cos(theta)
+    y_proj = np.sin(theta)
+    return x_proj, y_proj
     
