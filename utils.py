@@ -15,6 +15,8 @@ import os
 import pdb
 import logging
 import theano.tensor as tt
+import hotspot_fitter
+
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -461,10 +463,23 @@ class starry_basemodel():
             map_samples = np.zeros([n_draws,res,res])
             lat, lon = b_map.get_latlon_grid(res=res,projection=projection)
             resultDict = {}
-            resultDict['lat'] = lat
-            resultDict['lon'] = lon
+            resultDict['lat'] = lat.eval()
+            resultDict['lon'] = lon.eval()
+            lonfit_arr = np.zeros(n_draws)
+            latfit_arr = np.zeros(n_draws)
+            
+            if projection == 'rect':
+                lat_rect, lon_rect = lat, lon
+            else:
+                lat_rect_calc, lon_rect_calc = b_map.get_latlon_grid(res=res,projection='rect')
+                lat_rect = lat_rect_calc.eval()
+                lon_rect = lon_rect_calc.eval()
         else:
-            fig, axArr = plt.subplots(1,n_draws)
+            if projection == 'rect':
+                figsize=(20,15)
+            else:
+                figsize=None
+            fig, axArr = plt.subplots(1,n_draws,figsize=figsize)
         
         n_samples = len(trace['amp'])
         
@@ -477,19 +492,44 @@ class starry_basemodel():
             b_map.amp = amp
             
             if calcStats == True:
-                map_object = b_map.render(res=res,projection=projection)
-                map_samples[counter] = map_object.eval()
+                map_calc = b_map.render(res=res,projection=projection)
+                
+                map_samples[counter] = map_calc.eval()
+                
+                if projection == 'rect':
+                    eval2Drect = map_samples[counter]
+                else:
+                    eval2Drect = b_map.render(res=res,projection='rect').eval()
+                    
+                hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect)
+                
+                lonfit, latfit = hf.return_peak()
+                lonfit_arr[counter] = lonfit
+                latfit_arr[counter] = latfit
+                
             else:
                 ax = axArr[counter]
-                b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True)#,file=outFile_img)
+                b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True,
+                           projection=projection)
                 ax.set_title("Map Draw {}".format(counter+1),fontsize=6)
+            
         
         if calcStats == True:
             resultDict['meanMap'] = np.mean(map_samples,axis=0)
             resultDict['stdMap'] = np.std(map_samples,axis=0)
+            resultDict['lon_rect'] = lon_rect
+            resultDict['lat_rect'] = lat_rect
+            resultDict['lonfit_arr'] = lonfit_arr
+            resultDict['latfit_arr'] = latfit_arr
+            resultDict['mean_hspot_lon'] = np.mean(lonfit_arr)
+            resultDict['std_htspot_lon'] = np.std(lonfit_arr)
+            resultDict['mean_hspot_lat'] = np.mean(latfit_arr)
+            resultDict['std_htspot_lat'] = np.std(latfit_arr)
+
             return resultDict
         else:
-            outName = os.path.join('plots','map_draws','draws_{}.pdf'.format(self.descrip))
+            outName = os.path.join('plots','map_draws','{}_draws_{}.pdf'.format(projection,
+                                                                                self.descrip))
             print("Saving map draws plot to {}".format(outName))
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
