@@ -128,5 +128,5 @@ def test_map_plots():
     return sb
 
 if __name__ == "__main__":
-    run_inference()
+    run_all_inference_tests()
     
