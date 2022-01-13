@@ -97,8 +97,8 @@ class hotspot_fitter(object):
         latdeg = self.p_fit.y_mean.value
         londeg = self.p_fit.x_mean.value
         
-        x_proj, y_proj = find_unit_sphere_projection(londeg,latdeg)
-        return y_proj, x_proj
+        x_proj, y_proj = find_unit_circ_projection(londeg,latdeg)
+        return x_proj, y_proj
 
 
 def find_unit_circ_projection(londeg,latdeg):
