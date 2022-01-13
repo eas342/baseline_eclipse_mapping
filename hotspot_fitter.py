@@ -17,6 +17,12 @@ class hotspot_fitter(object):
         self.p_init = models.Gaussian2D(amplitude=0.7,x_mean=50,y_mean=40,
                                         x_stddev=30,y_stddev=30)
         
+        self.p_init.amplitude.min = 0
+        self.p_init.x_mean.bounds = (lon[0,xstart],lon[0,xend])
+        self.p_init.y_mean.bounds = (lat[ystart,0],lat[yend,0])
+        self.p_init.x_stddev.bounds = (1,(lon[0,xend] - lon[0,xstart]) * 2)
+        self.p_init.y_stddev.bounds = (1,(lat[yend,0] - lat[ystart,0]) * 2)
+        
         self.fit_p = fitting.LevMarLSQFitter()
         
         self.lat = lat
@@ -60,14 +66,19 @@ class hotspot_fitter(object):
         guess2D = self.p_init(self.lon,self.lat)
         model2D = self.p_fit(self.lon,self.lat)
         
-        fig, axArr = plt.subplots(1,3,sharey=True)
+        ystart, yend = self.ystart, self.yend
+        xstart, xend = self.xstart, self.xend
+        
+        fig, axArr = plt.subplots(1,3,sharey=True,sharex=True)
         mapList = [guess2D,self.map2D,model2D]
         labelList = ['guess','data','fit']
         for ind,oneMap in enumerate(mapList):
             ax = axArr[ind]
             ax.imshow(oneMap,origin='lower')
             ax.set_title(labelList[ind])
-        
+            ax.plot([xstart,xend,xend,xstart,xstart],
+                    [ystart,ystart,yend,yend,ystart],color='red')
+            
             
         #plt.imshow(p_init(lat,lon))
     
