@@ -469,7 +469,7 @@ class starry_basemodel():
             latfit_arr = np.zeros(n_draws)
             
             if projection == 'rect':
-                lat_rect, lon_rect = lat, lon
+                lat_rect, lon_rect = lat.eval(), lon.eval()
             else:
                 lat_rect_calc, lon_rect_calc = b_map.get_latlon_grid(res=res,projection='rect')
                 lat_rect = lat_rect_calc.eval()
@@ -565,7 +565,13 @@ class starry_basemodel():
                 vmax = 2. * np.nanmedian(statDict[keyName]) * 1e3
             
             im = ax.imshow(statDict[keyName] * 1e3,origin='lower',
-                           vmin=vmin,vmax=vmax,cmap='plasma')
+                           vmin=vmin,vmax=vmax,cmap='plasma',
+                           extent=[-1,1,-1,1])
+            
+            londeg = statDict['lonfit_arr']
+            latdeg = statDict['latfit_arr']
+            x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
+            ax.plot(x_proj,y_proj,'.',color='black')
             ax.set_title(oneMap)
             
             fig.colorbar(im,label=colorbarLabel)
