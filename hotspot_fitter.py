@@ -5,11 +5,11 @@ from astropy.table import Table
 import os
 from astropy.modeling import models, fitting
 import warnings
-
+import pdb
 
 class hotspot_fitter(object):
     
-    def __init__(self,map2D,lon,lat,
+    def __init__(self,map2D,lon,lat,err2D=None,
                  xstart=50,xend=80,ystart=50,yend=90):
         """
         Class for fitting a hotspot
@@ -23,11 +23,12 @@ class hotspot_fitter(object):
         self.p_init.x_stddev.bounds = (1,(lon[0,xend] - lon[0,xstart]) * 2)
         self.p_init.y_stddev.bounds = (1,(lat[yend,0] - lat[ystart,0]) * 2)
         
-        self.fit_p = fitting.LevMarLSQFitter()
+        self.fit_p = fitting.LevMarLSQFitter(calc_uncertainties=True)
         
         self.lat = lat
         self.lon = lon
         self.map2D = map2D
+        self.err2D = err2D
         
         self.ystart, self.yend = ystart, yend
         self.xstart, self.xend = xstart, xend
@@ -43,10 +44,30 @@ class hotspot_fitter(object):
             ystart, yend = self.ystart, self.yend
             xstart, xend = self.xstart, self.xend
             
+            if self.err2D is None:
+                weights = None
+                calc_uncertainties = False
+            else:
+                weights = 1./self.err2D[ystart:yend,xstart:xend]
+                calc_uncertainties = True
+            
             self.p_fit = self.fit_p(self.p_init,
                                     self.lon[ystart:yend,xstart:xend],
                                     self.lat[ystart:yend,xstart:xend],
-                                    self.map2D[ystart:yend,xstart:xend])
+                                    self.map2D[ystart:yend,xstart:xend],
+                                    weights=weights)
+            
+            if self.err2D is not None:
+                nparam = len(self.p_fit.param_names)
+                npoints = self.map2D.size
+                model2D = self.p_fit(self.lon,self.lat)
+                resid2D = self.map2D - model2D
+                
+                red_chisq = ((resid2D/self.err2D)**2).sum()/(npoints - nparam)
+                
+                self.red_chisq = red_chisq
+            else:
+                self.red_chisq = 1.0
         
     def check_for_fit(self):
         """
@@ -88,6 +109,28 @@ class hotspot_fitter(object):
         lat_fit = self.p_fit.x_mean.value
         
         return lon_fit, lat_fit
+    
+    def return_peak_cov(self):
+        """
+        Return the estimate for the covariance matrix of the fit
+        
+        Returns
+        --------
+        cov_matrix: 2D numpy array
+            Covariance matrix of the positions in the format
+            [var(x), cov(x,y)]
+            [var(x,y), var(y)]
+        """
+        self.check_for_fit()
+        
+        ## make sure the indices are right
+        assert self.p_fit.param_names[1] == 'x_mean'
+        assert self.p_fit.param_names[2] == 'y_mean'
+        
+        cov_pos = self.fit_p.fit_info['param_cov'][1:2+1,1:2+1]
+        
+        
+        return cov_pos * self.red_chisq
     
     def get_projected_hostpot(self):
         """
