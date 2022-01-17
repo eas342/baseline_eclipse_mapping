@@ -461,6 +461,9 @@ class starry_basemodel():
         
         if calcStats == True:
             map_samples = np.zeros([n_draws,res,res])
+            if projection != 'rect':
+                map_samples_rect = np.zeros_like(map_samples)
+            
             lat, lon = b_map.get_latlon_grid(res=res,projection=projection)
             resultDict = {}
             resultDict['lat'] = lat.eval()
@@ -500,7 +503,8 @@ class starry_basemodel():
                     eval2Drect = map_samples[counter]
                 else:
                     eval2Drect = b_map.render(res=res,projection='rect').eval()
-                    
+                    map_samples_rect[counter] = eval2Drect
+                
                 hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect)
                 
                 lonfit, latfit = hf.return_peak()
@@ -525,7 +529,24 @@ class starry_basemodel():
             resultDict['std_htspot_lon'] = np.std(lonfit_arr)
             resultDict['mean_hspot_lat'] = np.mean(latfit_arr)
             resultDict['std_htspot_lat'] = np.std(latfit_arr)
-
+            
+            
+            ## also find the hotspot of the mean map
+            if projection == 'rect':
+                resultDict['meanMap_rect'] = resultDict['meanMap']
+                resultDict['stdMap_rect'] = resultDict['stdMap']
+            else:
+                resultDict['meanMap_rect'] = np.mean(map_samples_rect,axis=0)
+                resultDict['stdMap_rect'] = np.std(map_samples_rect,axis=0)
+            
+            hf = hotspot_fitter.hotspot_fitter(statDict['meanMap_rect'],
+                                               statDict['lon_rect'],
+                                               statDict['lat_rect'])
+            
+            resultDict['meanMap_hspot_lon'] = hf.p_fit.x_mean.value
+            resultDict['meanMap_hspot_lat'] = hf.p_fit.y_mean.value
+            
+            
             return resultDict
         else:
             outName = os.path.join('plots','map_draws','{}_draws_{}.pdf'.format(projection,
