@@ -539,10 +539,10 @@ class starry_basemodel():
                 resultDict['meanMap_rect'] = np.mean(map_samples_rect,axis=0)
                 resultDict['stdMap_rect'] = np.std(map_samples_rect,axis=0)
             
-            hf = hotspot_fitter.hotspot_fitter(statDict['meanMap_rect'],
-                                               statDict['lon_rect'],
-                                               statDict['lat_rect'])
-            
+            hf = hotspot_fitter.hotspot_fitter(resultDict['meanMap_rect'],
+                                               resultDict['lon_rect'],
+                                               resultDict['lat_rect'])
+            hf.fit_model()
             resultDict['meanMap_hspot_lon'] = hf.p_fit.x_mean.value
             resultDict['meanMap_hspot_lat'] = hf.p_fit.y_mean.value
             
@@ -555,7 +555,7 @@ class starry_basemodel():
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
     
-    def plot_map_statistics(self,statDict=None):
+    def plot_map_statistics(self,statDict=None,showInputTruth=True):
         """
         Plot the maps for random draws or calculate stats on them
         
@@ -565,6 +565,9 @@ class starry_basemodel():
             A dictionary of statistics results. This is mainly to save time when
             re-running to plot if you already saved the dictionary
         
+        showInputTruth: bool (optional)
+            Show the input truth (for running simulated data and examining results)
+            Right now, hard-coded to the initial fit
         """
         if statDict is None:
             statDict = self.get_random_draws(calcStats=True,n_draws=40)
@@ -593,7 +596,18 @@ class starry_basemodel():
             latdeg = statDict['latfit_arr']
             x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
             ax.plot(x_proj,y_proj,'.',color='black')
+            
+            londeg_m = statDict['meanMap_hspot_lon']
+            latdeg_m = statDict['meanMap_hspot_lat']
+            x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
+                                                                          latdeg_m)
+            
+            ax.plot([x_proj_m],[y_proj_m],'o',markersize=10)
             ax.set_title(oneMap)
+            
+            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(59.573,
+                                                                          47.988)
+            ax.plot([x_proj_t],[y_proj_t],'+',markersize=8,color='darkgreen')
             
             fig.colorbar(im,label=colorbarLabel)
             #hide axes
