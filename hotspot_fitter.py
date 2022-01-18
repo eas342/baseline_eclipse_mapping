@@ -23,7 +23,7 @@ class hotspot_fitter(object):
         self.p_init.x_stddev.bounds = (1,(lon[0,xend] - lon[0,xstart]) * 2)
         self.p_init.y_stddev.bounds = (1,(lat[yend,0] - lat[ystart,0]) * 2)
         
-        self.fit_p = fitting.LevMarLSQFitter(calc_uncertainties=True)
+        self.fit_p = fitting.LevMarLSQFitter()
         
         self.lat = lat
         self.lon = lon
