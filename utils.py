@@ -592,22 +592,27 @@ class starry_basemodel():
                            vmin=vmin,vmax=vmax,cmap='plasma',
                            extent=[-1,1,-1,1])
             
+            ## show fits to individual map draws
             londeg = statDict['lonfit_arr']
             latdeg = statDict['latfit_arr']
             x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
             ax.plot(x_proj,y_proj,'.',color='black')
             
+
+            ## show the original hotspot fit
+            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(59.573,
+                                                                          47.988)
+            ax.plot([x_proj_t],[y_proj_t],'o')
+            
+            ## show the fit to the mean map
             londeg_m = statDict['meanMap_hspot_lon']
             latdeg_m = statDict['meanMap_hspot_lat']
             x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
                                                                           latdeg_m)
             
-            ax.plot([x_proj_m],[y_proj_m],'o',markersize=10)
+            ax.plot([x_proj_m],[y_proj_m],'+',markersize=10,color='darkgreen')
             ax.set_title(oneMap)
             
-            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(59.573,
-                                                                          47.988)
-            ax.plot([x_proj_t],[y_proj_t],'+',markersize=8,color='darkgreen')
             
             fig.colorbar(im,label=colorbarLabel)
             #hide axes
