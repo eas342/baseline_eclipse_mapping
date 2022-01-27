@@ -191,7 +191,8 @@ class starry_basemodel():
                 # *amplitude-weighted* vector of spherical harmonic
                 # coefficients.
                 #pm.Deterministic("amp", x_s[0])
-                pm.Deterministic("sec_y", x_s / x_s[0])
+                all_y =  x_s / x_s[0]
+                pm.Deterministic("sec_y", all_y[1:])
                 
             else:
                 lc_eval = pm.Deterministic('lc_eval',sys.flux(t=self.x[self.mask]))
