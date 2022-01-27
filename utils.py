@@ -127,8 +127,11 @@ class starry_basemodel():
                 sec_cov = 0.5**2 * np.eye(ncoeff)
             
             if self.map_type == 'variable':
-                b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
-                                          testval=sec_testval)
+                if self.map_prior == 'uniformPixels':
+                    pass
+                else:
+                    b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
+                                              testval=sec_testval)
                 
             if self.map_prior == 'physical':
                 # Add another constraint that the map should be physical
@@ -141,7 +144,10 @@ class starry_basemodel():
                 switch = pm.math.switch(badmap_check,-np.inf,0)
                 ## Assign a potential to avoid these maps
                 nonneg_map = pm.Potential('nonneg_map', switch)
-            
+            elif self.map_prior == 'uniformPixels':
+                lat_t, lon_t, Y2P, P2Y, Dx, Dy = b_map.get_pixel_transforms(oversample=2)
+                npix = lat_t.shape[0]
+                self.npix = npix
             
             # sec_mu = np.zeros(b_map.Ny)
             # sec_mu[0] = 1e-3
@@ -167,7 +173,29 @@ class starry_basemodel():
             
             self.sys = sys
             
-            lc_eval = pm.Deterministic('lc_eval',sys.flux(t=self.x[self.mask]))
+            if self.map_prior == 'uniformPixels':
+                A_design = sys.design_matrix(self.x[self.mask])
+                X_inf = A_design[:,1:] ## drop the first column because it a flat lc probably for the star
+                
+                # Uniform prior on the *pixels*
+                p = pm.Uniform("p", lower=0.0, upper=1.0, shape=(npix,))
+                #norm = pm.Normal("norm", mu=1e-3, sd=1e-4) ## the prior on the amplitude/normalization
+                x_s = b_map.amp * tt.dot(P2Y, p)
+
+                # Compute the flux
+                lc_model = tt.dot(X_inf, x_s)
+                lc_eval = pm.Deterministic("lc_eval", lc_model + 1.0)
+                
+                
+                # Store the Ylm coeffs. Note that `x_s` is the
+                # *amplitude-weighted* vector of spherical harmonic
+                # coefficients.
+                #pm.Deterministic("amp", x_s[0])
+                pm.Deterministic("sec_y", x_s / x_s[0])
+                
+            else:
+                lc_eval = pm.Deterministic('lc_eval',sys.flux(t=self.x[self.mask]))
+            
             resid = self.y[self.mask] - lc_eval
             
             ## estimate the standard deviation

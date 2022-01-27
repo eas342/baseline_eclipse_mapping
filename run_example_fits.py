@@ -127,6 +127,16 @@ def test_map_plots():
                                 map_prior='physical',use_gp=True)
     return sb
 
+def sb_px_sampling_obj():
+    dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
+    descrip = 'quad_HD189NCpxSampPMass'
+    sb = utils.starry_basemodel(dataPath=dataPath,
+                                descrip=descrip,
+                                map_type='variable',amp_type='variable',
+                                systematics='Flat',degree=3,
+                                map_prior='uniformPixels',use_gp=False)
+    return sb
+
 if __name__ == "__main__":
     run_all_inference_tests()
     
