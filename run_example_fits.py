@@ -129,7 +129,7 @@ def test_map_plots():
 
 def sb_px_sampling_obj():
     dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
-    descrip = 'quad_HD189NCpxSampPMass'
+    descrip = 'flat_no_gp_HD189NCpxSampPMass'
     sb = utils.starry_basemodel(dataPath=dataPath,
                                 descrip=descrip,
                                 map_type='variable',amp_type='variable',
