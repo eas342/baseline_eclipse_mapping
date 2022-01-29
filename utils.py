@@ -50,6 +50,7 @@ class starry_basemodel():
             The spherical harmonic degree
         map_prior: str
             What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+            'uniformPixels' assumes all pixels are uniform (times amplitude) and therefore physical
             'non-physical' allows the spherical harmonics to be postive or negative
     
         """
@@ -385,7 +386,8 @@ class starry_basemodel():
         return truths
     
     def prep_corner(self,sph_harmonics='all',
-                    include_sigma_lc=True):
+                    include_sigma_lc=True,
+                    discard_px_vars=True):
         """
         Prepare the data that a corner plot needs
                     
@@ -396,6 +398,8 @@ class starry_basemodel():
             "m=1" will choose only m=1 sph harmonics
         include_sigma_lc: bool
             pass to ::code::`select_plot_variables`
+        discard_px_vars: bool
+            Discard the pixel samples. Only matters when pixel sampling is used
         """
         
         if hasattr(self,'trace') == False:
@@ -408,7 +412,17 @@ class starry_basemodel():
         samples_all = pm.trace_to_dataframe(self.trace, varnames=varnames)
         
         ## the trace_to_dataframe splits up arrays of variables
-        keys_varlist = list(samples_all.keys())
+        keys_varlist_full = list(samples_all.keys())
+        
+        if discard_px_vars == True:
+            keys_varlist = []
+            for oneKeyFromFull in keys_varlist_full:
+                if (('p_interval___' in oneKeyFromFull) | (oneKeyFromFull[0:3] == 'p__')):
+                    pass
+                else:
+                    keys_varlist.append(oneKeyFromFull)
+        else:
+            keys_varlist = keys_varlist_full
         
         ## A fairly complicated way to select the m=1 spherical harmonics
         ## and all other variables that came from select_plot_variables
