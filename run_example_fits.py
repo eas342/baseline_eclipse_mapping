@@ -31,6 +31,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                                  'orig' is the original lightcurve at high precision
     map_prior: str
         What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+        and 'uniformPixels' does pixel sampling to ensure the pixels are non-negative
         'non-physical' allows the spherical harmonics to be postive or negative
     
     degree: int
@@ -43,6 +44,8 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     
     if map_prior == 'physical':
         phys_descrip = 'phys'
+    elif map_prior == 'uniformPixels':
+        phys_descrip = 'pxSamp'
     else:
         phys_descrip = 'nophys'
     
@@ -109,13 +112,16 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   degree=degree)
     
 
-def run_all_inference_tests():
+def run_all_inference_tests(map_prior='physical'):
     """
     Run all inference tests
+    map
     """
     for lc_name in ['orig','NC_HD189']:
-        run_inference(lc_name=lc_name)
-    
+        run_inference(lc_name=lc_name,map_prior=map_prior)
+
+def run_all_inference_px_sampling():
+    run_all_inference_tests(map_prior='uniformPixels')
 
 def test_map_plots():
     dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
