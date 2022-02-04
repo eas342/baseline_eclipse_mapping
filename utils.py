@@ -315,6 +315,8 @@ class starry_basemodel():
                 trace = pm.load_trace(directory=outDir)
         
         self.trace = trace
+        
+        self.save_posterior_stats()
     
     def select_plot_variables(self,sph_harmonics='none',
                               include_GP=False,
@@ -461,6 +463,61 @@ class starry_basemodel():
         
         with self.model:
             self.A = pmx.eval_in_model(self.sys.design_matrix(self.x))
+        
+    
+    def save_posterior_stats(self,trace=None):
+        """
+        Save some statistics on the posterior distributions of variables
+        
+        Parameters
+        ----------
+        trace: pymc3 multitrace object
+            Manually put in a trace object. This is to save time if 
+        running this multiple times, mostly during debugging/development.
+        """
+        if trace is None:
+            if hasattr(self,'trace') == False:
+                self.find_posterior()
+            trace = self.trace
+            
+        varnames = self.select_plot_variables(sph_harmonics='all',
+                                              include_sigma_lc=True)
+        
+        
+        samples_all = pm.trace_to_dataframe(trace, varnames=varnames)
+        
+        ## the trace_to_dataframe splits up arrays of variables
+        keys_varlist_full = list(samples_all.keys())
+        
+        percentiles_to_gather = [2.5,16,50,84,97.5]
+        nperc = len(percentiles_to_gather)
+        widths_to_gather = [68,95]
+        nwidth = len(widths_to_gather)
+        
+        percentiles_for_widths = [[16,84],[2.5,97.5]]
+        
+        nvar = len(keys_varlist_full)
+        percentiles2D = np.zeros([nvar,nperc])
+        widths2D = np.zeros([nvar,nwidth])
+        
+        for var_ind,oneVar in enumerate(keys_varlist_full):
+            thisVar_perc = np.percentile(samples_all[oneVar],percentiles_to_gather)
+            percentiles2D[var_ind,:] = thisVar_perc
+            
+            for width_ind,perc_for_width in enumerate(percentiles_for_widths):
+                rangePosterior = np.percentile(samples_all[oneVar],perc_for_width)
+                widths2D[var_ind,width_ind] = rangePosterior[1] - rangePosterior[0]
+        
+        t = Table()
+        t['Variable'] = keys_varlist_full
+        for perc_ind,onePerc in enumerate(percentiles_to_gather):
+            t['{} perc'.format(onePerc)] = percentiles2D[:,perc_ind]
+        for width_ind,oneWidth in enumerate(widths_to_gather):
+            t['{} perc width'.format(oneWidth)] = widths2D[:,width_ind]
+        
+        outName = os.path.join('fit_data','posterior_stats','{}_stats.csv'.format(self.descrip))
+        print("Saving posterior statistics to {}".format(outName))
+        t.write(outName,overwrite=True)
         
     
     def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
