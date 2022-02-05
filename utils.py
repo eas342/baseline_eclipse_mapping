@@ -510,6 +510,7 @@ class starry_basemodel():
         
         t = Table()
         t['Variable'] = keys_varlist_full
+        t['Label'] = label_converter(keys_varlist_full)
         for perc_ind,onePerc in enumerate(percentiles_to_gather):
             t['{} perc'.format(onePerc)] = percentiles2D[:,perc_ind]
         for width_ind,oneWidth in enumerate(widths_to_gather):
