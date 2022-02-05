@@ -1,4 +1,7 @@
 import utils
+from astropy.io import fits, ascii
+import os
+import numpy as np
 
 def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     """
@@ -146,3 +149,25 @@ def sb_px_sampling_obj():
 if __name__ == "__main__":
     run_all_inference_tests()
     
+def posterior_ratios():
+    compare_idealized = ['Orig_006_newrho_smallGPphys_maptype_variable_amp_type_variable_stats.csv',
+                         'Flat_001_no_gpphys_maptype_variable_amp_type_variableFlat_stats.csv']
+    compare_HD189 = ['quad_HD189NCphysPMass_maptype_variable_amp_type_variableQuadratic_stats.csv',
+                     'flat_no_gp_HD189NCphysPMass_maptype_variable_amp_type_variableFlat_stats.csv']
+    compare_pairs = [compare_idealized,compare_HD189]
+    compare_planet_names = ['Idealized','HD_189733_b']
+    ratio_name = ['systematics over flat ratio']
+    
+    for onePlanet, onePair in zip(compare_planet_names,compare_pairs):
+        dat1 = ascii.read(os.path.join('fit_data/posterior_stats/',onePair[0]))
+        dat2 = ascii.read(os.path.join('fit_data/posterior_stats/',onePair[1]))
+        
+        assert np.array_equal(dat1['Variable'],dat2['Variable'])
+        
+        ratio_table = dat1[['Variable','Label']]
+        ratio_table['68 perc {}'.format(ratio_name)] = dat1['68 perc width'] / dat2['68 perc width']
+        ratio_table['95 perc {}'.format(ratio_name)] = dat1['95 perc width'] / dat2['95 perc width']
+        outName = "{}_ratios.csv".format(onePlanet)
+        outPath = os.path.join('fit_data','posterior_stats',outName)
+        
+        ratio_table.write(outPath,overwrite=True)
