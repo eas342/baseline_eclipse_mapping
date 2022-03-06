@@ -150,6 +150,10 @@ if __name__ == "__main__":
     run_all_inference_tests()
     
 def posterior_ratios():
+    """
+    Calculate how much the posterior precisions compare (numerically) for models with/without baselines
+    
+    """
     compare_idealized = ['Orig_006_newrho_smallGPphys_maptype_variable_amp_type_variable_stats.csv',
                          'Flat_001_no_gpphys_maptype_variable_amp_type_variableFlat_stats.csv']
     compare_HD189 = ['quad_HD189NCphysPMass_maptype_variable_amp_type_variableQuadratic_stats.csv',
