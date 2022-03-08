@@ -631,6 +631,14 @@ class starry_basemodel():
             resultDict['mean_hspot_lat'] = np.mean(latfit_arr)
             resultDict['std_htspot_lat'] = np.std(latfit_arr)
             
+            ## find the residuals
+            if (('Amplitude' in self.dat.meta) & ('y_input' in self.dat.meta)):
+                truth_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.meta['inc'])
+                truth_map.amp = self.dat.meta['Amplitude']
+                truth_map[1:,:] = self.dat.meta['y_input']
+                truth_map_calc = b_map.render(res=res,projection=projection).eval()
+                resultDict['residMap'] = resultDict['meanMap'] - truth_map_calc
+                resultDict['residSigma'] = resultDict['residMap'] / resultDict['stdMap']
             
             ## also find the hotspot of the mean map
             if projection == 'rect':
@@ -656,7 +664,7 @@ class starry_basemodel():
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
     
-    def plot_map_statistics(self,statDict=None,showInputTruth=True):
+    def plot_map_statistics(self,statDict=None):
         """
         Plot the maps for random draws or calculate stats on them
         
@@ -666,14 +674,11 @@ class starry_basemodel():
             A dictionary of statistics results. This is mainly to save time when
             re-running to plot if you already saved the dictionary
         
-        showInputTruth: bool (optional)
-            Show the input truth (for running simulated data and examining results)
-            Right now, hard-coded to the initial fit
         """
         if statDict is None:
             statDict = self.get_random_draws(calcStats=True,n_draws=40)
         
-        for ind,oneMap in enumerate(['Mean','Error']):
+        for ind,oneMap in enumerate(['Mean','Error','Residual']):
             fig, ax = plt.subplots()
             
             
@@ -682,14 +687,23 @@ class starry_basemodel():
                 colorbarLabel = 'I$_p$ (ppt)'
                 keyName = 'meanMap'
                 vmin, vmax = None, None
-            else:
+                multiplier = 1e3
+            elif oneMap == 'Error':
                 outName = 'error_{}.pdf'.format(self.descrip)
                 colorbarLabel = '$\sigma_I$ (ppt)'
                 keyName = 'stdMap'
-                vmin = np.nanmin(statDict[keyName]) * 1e3
-                vmax = 2. * np.nanmedian(statDict[keyName]) * 1e3
+                
+                multiplier = 1e3
+                vmin = np.nanmin(statDict[keyName]) * multiplier
+                vmax = 2. * np.nanmedian(statDict[keyName]) * multiplier
+            else:
+                outName = 'resid_{}.pdf'.format(self.descrip)
+                colorbarLabel = '$I_{resid}$ ($\sigma$)'
+                keyName = 'residSigma'
+                vmin, vmax = None, None
+                multiplier = 1.0
             
-            im = ax.imshow(statDict[keyName] * 1e3,origin='lower',
+            im = ax.imshow(statDict[keyName] * multiplier,origin='lower',
                            vmin=vmin,vmax=vmax,cmap='plasma',
                            extent=[-1,1,-1,1])
             
