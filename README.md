@@ -4,11 +4,11 @@ This code does a forward model, simulates noise and then fits the simulated ligh
 
 ## Forward model
 
-Run the `make_eclipse_w_baseline.ipynb` notebook to generate a forward model with noise.
+Run the `make_eclipse_w_baseline.ipynb` notebook to generate a forward model with noise. Use Starry version 1.0 (my conda environment `BEMStarry1p0`)
 
 ## Bayesian Fit
 
-The `run_example_fits.py` script does the inference.
+The `run_example_fits.py` script does the inference. Use starry 1.2.0 (my conda environment `BEMRosetta2`)
 
 ## Installation (worked for starry 1.2.0)
 
