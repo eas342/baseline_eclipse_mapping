@@ -16,6 +16,7 @@ fit_data/posterior_stats/*.csv
 calculate_hd189_eclipse_depths.ipynb
 check_spherical_harmonic_amplitudes.ipynb
 exploratory_noteboks/*.ipynb
+exploratory_noteboks/*.pdf
 map_with_spitzer.ipynb
 modifications_to_the_more_physical_priors_OLD/
 real_data/light_curve.sav
