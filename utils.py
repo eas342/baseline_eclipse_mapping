@@ -25,6 +25,8 @@ starry.config.quiet = True
 theano_logger_tensor_opt = logging.getLogger("theano.tensor.opt")
 theano_logger_tensor_opt.setLevel(logging.CRITICAL) 
 
+forward_model_degree = 3
+
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
                  descrip='Orig_006_newrho_smallGP',
@@ -633,7 +635,7 @@ class starry_basemodel():
             
             ## find the residuals
             if (('Amplitude' in self.dat.meta) & ('y_input' in self.dat.meta)):
-                truth_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.meta['inc'])
+                truth_map = starry.Map(ydeg=forward_model_degree,udeg=0,inc=self.meta['inc'])
                 truth_map.amp = self.dat.meta['Amplitude']
                 truth_map[1:,:] = self.dat.meta['y_input']
                 truth_map_calc = b_map.render(res=res,projection=projection).eval()
