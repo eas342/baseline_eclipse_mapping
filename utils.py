@@ -523,6 +523,58 @@ class starry_basemodel():
         t.write(outName,overwrite=True)
         
     
+    def get_unique_variables(self):
+        if hasattr(self,'mxap_soln') == False:
+            self.find_mxap()
+        self.read_mxap()
+        
+        variables_list = self.mxap_soln.keys()
+        
+        all_unique_variables = []
+        for oneVariable in variables_list:
+            if oneVariable == 'p':
+                pass
+            elif oneVariable == 'p_interval__':
+                pass
+            elif oneVariable ==  'sigma_lc_log__':
+                pass
+            elif oneVariable == 'lc_eval':
+                pass
+            elif oneVariable == 'final_lc':
+                pass
+            elif oneVariable == 'sec_y':
+                for ind,oneVar in enumerate(self.mxap_soln[oneVariable]):
+                    all_unique_variables.append('sec_y_{:03d}'.format(ind))
+            else:
+                all_unique_variables.append(oneVariable)
+        
+        return all_unique_variables
+    
+    
+    def calc_BIC(self):
+        """
+        Calculate the Bayesian Information Criterion of the maximum a priori model
+        """
+        if hasattr(self,'mxap_soln') == False:
+            self.find_mxap()
+        self.read_mxap()
+        ymod = self.mxap_soln['final_lc']
+        chisq = np.sum((ymod - self.y)**2 / self.yerr**2)
+        nvar = len(self.get_unique_variables())
+        npoints = len(self.y)
+        BIC = chisq + nvar * np.log(npoints)
+        
+        t = Table()
+        t['chisq'] = [chisq]
+        t['BIC'] = BIC
+        t['nvar'] = nvar
+        t['npoints'] = npoints
+        t['red chisq'] = chisq / float(npoints - nvar)
+        
+        outName = os.path.join('fit_data','lc_BIC','{}_lc_BIC.csv'.format(self.descrip))
+        print("Saving BIC statistics to {}".format(outName))
+        t.write(outName,overwrite=True)
+    
     def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
                          res=100,projection='ortho'):
         """
