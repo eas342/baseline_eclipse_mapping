@@ -15,31 +15,10 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb = utils.starry_basemodel(descrip=descrip,map_type='fixed',amp_type='fixedAt1e-3')
     sb.plot_lc(point='mxap')
 
-def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
-                                  super_giant_corner=False,lc_name='NC_HD189',
-                                  map_prior='physical',degree=3):
-    """
-    Try fitting a lightcurve with a flat baseline vs curved
+
+def make_sb_objects(map_type='variable',lc_name='NC_HD189',
+                    map_prior='physical',degree=3):
     
-    map_type: str
-        Map type "fixed" fixes it at uniform. "variable" solves for sph harmonics
-    find_posterior: bool
-        Find the posterior of the distribution? If True, the Bayesian sampler
-        is employed to find it. If False, it just fins the max a priori solution
-    super_giant_corner: bool
-        Save the super giant corner plots?
-        These can take a long time, so they can be skipped by changing to False
-    lc_name: str
-        Name of the lightcurve ('NC_HD189' uses a NIRCam lightcurve for HD 189733)
-                                 'orig' is the original lightcurve at high precision
-    map_prior: str
-        What priors are put on the plot? 'phys' ensures physical (non-negative priors)
-        and 'uniformPixels' does pixel sampling to ensure the pixels are non-negative
-        'non-physical' allows the spherical harmonics to be postive or negative
-    
-    degree: int
-        The spherical harmonic degree
-    """
     if degree == 3:
         degree_descrip = ''
     else:
@@ -92,6 +71,41 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type,degree=degree,
                                     map_prior=map_prior,use_gp=use_gp_list[ind])
+        sb_list.append(sb)
+    
+    return sb_list
+
+def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
+                                  super_giant_corner=False,lc_name='NC_HD189',
+                                  map_prior='physical',degree=3):
+    """
+    Try fitting a lightcurve with a flat baseline vs curved
+    
+    map_type: str
+        Map type "fixed" fixes it at uniform. "variable" solves for sph harmonics
+    find_posterior: bool
+        Find the posterior of the distribution? If True, the Bayesian sampler
+        is employed to find it. If False, it just fins the max a priori solution
+    super_giant_corner: bool
+        Save the super giant corner plots?
+        These can take a long time, so they can be skipped by changing to False
+    lc_name: str
+        Name of the lightcurve ('NC_HD189' uses a NIRCam lightcurve for HD 189733)
+                                 'orig' is the original lightcurve at high precision
+    map_prior: str
+        What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+        and 'uniformPixels' does pixel sampling to ensure the pixels are non-negative
+        'non-physical' allows the spherical harmonics to be postive or negative
+    
+    degree: int
+        The spherical harmonic degree
+    """
+    
+    
+    sb_list = make_sb_objects(map_type=map_type,lc_name=lc_name,
+                              map_prior=map_prior,degree=degree)
+    
+    for sb in sb_list:
         sb.plot_lc(point='mxap')
         if find_posterior == True:
             sb.find_posterior()
