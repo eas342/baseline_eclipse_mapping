@@ -51,16 +51,18 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_cubic_baseline_hd189_ncF444W.ecsv'
-    else:
+    elif lc_name == 'orig':
         systematics=['Flat','Cubic']
         
         descrips_basenames = ['Flat_001_no_gp','Orig_006_newrho_smallGP']
         
         descrips = []
         for descrip_basename in descrips_basenames:
-            descrips.append("{}{}".format(descrip_basename,phys_descrip))
+            descrips.append("{}{}{}".format(descrip_basename,phys_descrip,degree_descrip))
         
         dataPath='sim_data/sim_data_baseline.ecsv'
+    else:
+        raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
     use_gp_list = [False,True]
     
