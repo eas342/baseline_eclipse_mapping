@@ -116,7 +116,6 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         sb.get_random_draws()
         sb.plot_map_statistics()
         sb.calc_BIC()
-        sb_list.append(sb)
     
     if super_giant_corner == True:
         utils.compare_corners(sb_list[0],sb_list[1])
