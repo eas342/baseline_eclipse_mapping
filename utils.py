@@ -742,6 +742,7 @@ class starry_basemodel():
                 keyName = 'meanMap'
                 vmin, vmax = None, None
                 multiplier = 1e3
+                cmap = 'plasma'
             elif oneMap == 'Error':
                 outName = 'error_{}.pdf'.format(self.descrip)
                 colorbarLabel = '$\sigma_I$ (ppt)'
@@ -750,15 +751,17 @@ class starry_basemodel():
                 multiplier = 1e3
                 vmin = np.nanmin(statDict[keyName]) * multiplier
                 vmax = 2. * np.nanmedian(statDict[keyName]) * multiplier
+                cmap = 'plasma'
             else:
                 outName = 'resid_{}.pdf'.format(self.descrip)
                 colorbarLabel = '$I_{resid}$ ($\sigma$)'
                 keyName = 'residSigma'
                 vmin, vmax = None, None
                 multiplier = 1.0
+                cmap = 'PiYG'
             
             im = ax.imshow(statDict[keyName] * multiplier,origin='lower',
-                           vmin=vmin,vmax=vmax,cmap='plasma',
+                           vmin=vmin,vmax=vmax,cmap=cmap,
                            extent=[-1,1,-1,1])
             
             ## show fits to individual map draws
