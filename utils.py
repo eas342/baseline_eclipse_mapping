@@ -231,31 +231,77 @@ class starry_basemodel():
             self.resid_guess = pmx.eval_in_model(resid)
         self.model = model
     
-    def plot_lc(self,point='guess'):
+    def plot_lc(self,point='guess',posterior_dist=False,
+                mxap_soln=None,trace_hdi=None):
+        """
+        plot the lightcurve data and models
+        separate models are shown for the Gaussian Process and astrophysical component
+        
+        Parameters
+        ----------
+        point: str
+            What model to plot?
+            "guess" the guess parameters
+            "mxap" the maximum a priori parameters
+            "posterior" the posterior distribution of lightcurves (and mxap)
+        mxap_soln: None or maximum a prior solution dictionary
+            This is just for saving time if you already have it calculated
+        trace_hdi: None or arviz xarray dataset
+            This is just for saving time if you already have it calculated
+        """
         if point == "guess":
             if hasattr(self,'lc_guess') == False:
                 self.build_model()
             #f =  self.sys.flux(self.x).eval()
             f = self.lc_guess
             f_astroph = self.lc_guess_astroph
-        elif point == "mxap":
-            self.find_mxap()
-            f = self.mxap_soln['final_lc']
-            f_astroph = self.mxap_soln['lc_eval'] 
+        elif (point == "mxap") | (point == 'posterior'):
+            if mxap_soln is None:
+                self.find_mxap()
+                mxap_soln = self.mxap_soln
+            
+            f = mxap_soln['final_lc']
+            f_astroph = mxap_soln['lc_eval']
+            if point == "posterior":
+                if trace_hdi is None:
+                    self.find_posterior()
+                    with self.model:
+                        trace_hdi = pm.hdi(self.trace,var_names=['final_lc','lc_eval'])
         else:
             raise Exception("Un-recognized test point {}".format(point))
         
+        
+        
         fig, (ax,ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
         ax.plot(self.x,self.y,'.',label='data')
-        ax.plot(self.x,f,label='GP model')
-        ax.plot(self.x,f_astroph,label='Astrophysical Component')
+        ax.plot(self.x,f,label='GP model',color= u'#ff7f0e')
+        ax.plot(self.x,f_astroph,label='Astrophysical Component',color='green')
+        
+        if point == 'posterior':
+            ## full GP model
+            ax.fill_between(self.x,trace_hdi['final_lc'][:,0],trace_hdi['final_lc'][:,1],
+                            color=u'#ff7f0e')
+            ## astrophysical component
+            ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1],
+                            color='green',alpha=0.6)
+        
+        
         resid = self.y - f
         ax.legend()
         
         ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
-        ax2.set_xlabel("Time")
+        
+        if point == 'posterior':
+            ax2.fill_between(self.x,(trace_hdi['final_lc'][:,0] - f) * 1e6,
+                             (trace_hdi['final_lc'][:,1] - f) * 1e6,color=u'#ff7f0e',
+                             zorder=10)
+            #ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1])
+        
+        ax2.set_xlabel("Time (days)")
         ax2.set_ylabel("Resid (ppm)")
-        fig.savefig('plots/lc_checks/lc_{}_{}.pdf'.format(self.descrip,point))
+        ax.set_ylabel("Normalized Flux")
+        fig.savefig('plots/lc_checks/lc_{}_{}.pdf'.format(self.descrip,point),
+                    bbox_inches='tight')
         plt.close(fig)
         
     def find_mxap(self,recalculate=False):
@@ -266,7 +312,7 @@ class starry_basemodel():
         Parameters
         -----------
         recalculate: bool
-            If true, re-caclulate the solution, even one exists. If False, and
+            If true, re-calculate the solution, even one exists. If False, and
             a previous one is found, it reads the previous solution.
         
         """
@@ -391,6 +437,7 @@ class starry_basemodel():
     
     def prep_corner(self,sph_harmonics='all',
                     include_sigma_lc=True,
+                    include_GP=False,
                     discard_px_vars=True):
         """
         Prepare the data that a corner plot needs
@@ -402,6 +449,8 @@ class starry_basemodel():
             "m=1" will choose only m=1 sph harmonics
         include_sigma_lc: bool
             pass to ::code::`select_plot_variables`
+        include_GP: bool
+            pass to ::code::`select_plot_variables`            
         discard_px_vars: bool
             Discard the pixel samples. Only matters when pixel sampling is used
         """
@@ -410,7 +459,8 @@ class starry_basemodel():
             self.find_posterior()
         
         varnames = self.select_plot_variables(sph_harmonics=sph_harmonics,
-                                              include_sigma_lc=include_sigma_lc)
+                                              include_sigma_lc=include_sigma_lc,
+                                              include_GP=include_GP)
         
         
         samples_all = pm.trace_to_dataframe(self.trace, varnames=varnames)

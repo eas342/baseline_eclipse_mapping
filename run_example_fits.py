@@ -87,7 +87,7 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
         Map type "fixed" fixes it at uniform. "variable" solves for sph harmonics
     find_posterior: bool
         Find the posterior of the distribution? If True, the Bayesian sampler
-        is employed to find it. If False, it just fins the max a priori solution
+        is employed to find it. If False, it just finds the max a priori solution
     super_giant_corner: bool
         Save the super giant corner plots?
         These can take a long time, so they can be skipped by changing to False
@@ -108,14 +108,16 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                               map_prior=map_prior,degree=degree)
     
     for sb in sb_list:
+        sb.run_all()
         sb.plot_lc(point='mxap')
         if find_posterior == True:
             sb.find_posterior()
             if super_giant_corner == True:
                 sb.plot_corner()
-        sb.get_random_draws()
-        sb.plot_map_statistics()
-        sb.calc_BIC()
+            sb.plot_lc(point='posterior')
+            sb.get_random_draws()
+            sb.plot_map_statistics()
+            sb.calc_BIC()
     
     if super_giant_corner == True:
         utils.compare_corners(sb_list[0],sb_list[1])
