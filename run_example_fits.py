@@ -108,16 +108,9 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                               map_prior=map_prior,degree=degree)
     
     for sb in sb_list:
-        sb.run_all()
-        sb.plot_lc(point='mxap')
-        if find_posterior == True:
-            sb.find_posterior()
-            if super_giant_corner == True:
-                sb.plot_corner()
-            sb.plot_lc(point='posterior')
-            sb.get_random_draws()
-            sb.plot_map_statistics()
-            sb.calc_BIC()
+        sb.run_all(find_posterior=find_posterior,
+                   super_giant_corner=super_giant_corner)
+        
     
     if super_giant_corner == True:
         utils.compare_corners(sb_list[0],sb_list[1])

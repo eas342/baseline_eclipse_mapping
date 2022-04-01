@@ -16,7 +16,7 @@ import pdb
 import logging
 import theano.tensor as tt
 import hotspot_fitter
-
+import arviz
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -232,7 +232,7 @@ class starry_basemodel():
         self.model = model
     
     def plot_lc(self,point='guess',posterior_dist=False,
-                mxap_soln=None,trace_hdi=None):
+                mxap_soln=None,xdataset=None):
         """
         plot the lightcurve data and models
         separate models are shown for the Gaussian Process and astrophysical component
@@ -246,7 +246,8 @@ class starry_basemodel():
             "posterior" the posterior distribution of lightcurves (and mxap)
         mxap_soln: None or maximum a prior solution dictionary
             This is just for saving time if you already have it calculated
-        trace_hdi: None or arviz xarray dataset
+        xdata: xarray produced by arviz xarray dataset
+            For example, xdataset = arviz.convert_to_dataset(self.trace)
             This is just for saving time if you already have it calculated
         """
         if point == "guess":
@@ -255,18 +256,27 @@ class starry_basemodel():
             #f =  self.sys.flux(self.x).eval()
             f = self.lc_guess
             f_astroph = self.lc_guess_astroph
-        elif (point == "mxap") | (point == 'posterior'):
+        elif (point == "mxap"):
+            
             if mxap_soln is None:
                 self.find_mxap()
                 mxap_soln = self.mxap_soln
             
             f = mxap_soln['final_lc']
             f_astroph = mxap_soln['lc_eval']
+        elif (point == 'posterior'):
             if point == "posterior":
-                if trace_hdi is None:
+                if xdataset is None:
                     self.find_posterior()
+                    
                     with self.model:
-                        trace_hdi = pm.hdi(self.trace,var_names=['final_lc','lc_eval'])
+                        xdataset = arviz.convert_to_dataset(self.trace)
+            final_lc2D = flatten_chains(xdataset['final_lc'])
+            astroph_lc2D = flatten_chains(xdataset['lc_eval'])
+            f = np.median(final_lc2D,axis=0)
+            f_astroph = np.median(astroph_lc2D,axis=0)
+            lim_final_lc = np.percentile(final_lc2D,axis=0,q=[2.5,97.5])
+            lim_astroph_lc = np.percentile(astroph_lc2D,axis=0,q=[2.5,97.5])
         else:
             raise Exception("Un-recognized test point {}".format(point))
         
@@ -279,10 +289,10 @@ class starry_basemodel():
         
         if point == 'posterior':
             ## full GP model
-            ax.fill_between(self.x,trace_hdi['final_lc'][:,0],trace_hdi['final_lc'][:,1],
+            ax.fill_between(self.x,lim_final_lc[0,:],lim_final_lc[1,:],
                             color=u'#ff7f0e')
             ## astrophysical component
-            ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1],
+            ax.fill_between(self.x,lim_astroph_lc[0,:],lim_astroph_lc[1,:],
                             color='green',alpha=0.6)
         
         
@@ -292,8 +302,8 @@ class starry_basemodel():
         ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
         
         if point == 'posterior':
-            ax2.fill_between(self.x,(trace_hdi['final_lc'][:,0] - f) * 1e6,
-                             (trace_hdi['final_lc'][:,1] - f) * 1e6,color=u'#ff7f0e',
+            ax2.fill_between(self.x,(lim_final_lc[0,:] - f) * 1e6,
+                             (lim_final_lc[1,:] - f) * 1e6,color=u'#ff7f0e',
                              zorder=10)
             #ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1])
         
@@ -846,7 +856,38 @@ class starry_basemodel():
             print("Saving map draws plot to {}".format(outFull))
             fig.savefig(outFull,bbox_inches='tight')
             
+    def run_all(self,find_posterior=True,super_giant_corner=False):
+        self.plot_lc(point='mxap')
+        if find_posterior == True:
+            self.find_posterior()
+            if super_giant_corner == True:
+                self.plot_corner()
+            self.plot_lc(point='posterior')
+            self.get_random_draws()
+            self.plot_map_statistics()
+            self.calc_BIC()
+            
+
+def flatten_chains(trace3D):
+    """
+    Flatten points in the chain to give distributions across all chains
     
+    Inputs
+    ----------
+    trace3D: 3D or other numpy array
+        The 3D array with the Python shape nchains x npoints x nvariables
+    
+    Outputs
+    --------
+    trac2D: 2D numpy array
+        The 2D array with the Python shape n_allpoints x nvariables
+    """
+    nchains, npoints, nvariables = trace3D.shape
+    
+    trace2D = np.reshape(np.array(trace3D),[nchains * npoints,nvariables])
+    return trace2D
+    
+
 def ylm_labels(degree):
     """
     Make a list of the Ylm variables for a given degree
