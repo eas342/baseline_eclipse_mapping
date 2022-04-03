@@ -842,7 +842,7 @@ class starry_basemodel():
             x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
                                                                           latdeg_m)
             
-            ax.plot([x_proj_m],[y_proj_m],'+',markersize=10,color='darkgreen')
+            ax.plot([x_proj_m],[y_proj_m],'+',markersize=0,color='darkgreen')
             ax.set_title(oneMap)
             
             
@@ -957,9 +957,9 @@ def compare_corners(sb1,sb2,sph_harmonics='all',
     samples2, truths2, labels2 = sb2.prep_corner(sph_harmonics=sph_harmonics,
                                                 include_sigma_lc=include_sigma_lc)
     fig1 = corner.corner(samples1,truths=truths1,
-                        color='green')
+                        color='#FF9B54') # ## sandy brown
     fig2 = corner.corner(samples2,truths=truths2,
-                        color='red',fig=fig1,labels=labels2)
+                        color='#720026',fig=fig1,labels=labels2) # Claret, dark brown
     file_descrip = '{}{}_vs_{}'.format(extra_descrip,sb1.descrip[0:20],sb2.descrip[0:20])
     fig1.savefig('plots/corner/comparison_{}.png'.format(file_descrip))
     plt.close(fig1)
@@ -997,15 +997,15 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
             ax = axArr[sb1.degree + 1,extra_plot_counter]
         ax.axis('on')
         ax.yaxis.set_visible(False)
-        ax.hist(samples1[keys1[ind]],histtype='step',color='green',linewidth=2)
-        ax.hist(samples2[keys1[ind]],histtype='step',color='red',linewidth=2)
+        ax.hist(samples1[keys1[ind]],histtype='step',color='#FF9B54',linewidth=2) ## sandy brown
+        ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2) ## Claret
         
         ax.axvline(truths1[ind],color='blue',linestyle='dashed')
         
         ax.set_title(oneLabel)
     
-    axArr[0,0].text(0,0,dataDescrips[0],color='green')
-    axArr[0,0].text(0,1,dataDescrips[1],color='red')
+    axArr[0,0].text(0,0,dataDescrips[0],color='#FF9B54') ## sandy brown
+    axArr[0,0].text(0,1,dataDescrips[1],color='#720026') ## Claret, dark brown
     axArr[0,0].set_ylim(0,2)
     
     outPath = 'plots/histos/comparison_histo_{}_{}.pdf'.format(sb1.descrip,sb2.descrip)
