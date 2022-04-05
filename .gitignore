@@ -25,3 +25,4 @@ sim_data/resids_from_mirage_sim.ecsv
 html_notebook_saves/
 plots/map_draws/ninimma_vs_m1/
 plots/map_stats/pix_sampling/
+fit_data/lc_BIC/lc_BIC_summary.txt
