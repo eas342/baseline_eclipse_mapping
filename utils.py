@@ -231,7 +231,7 @@ class starry_basemodel():
             self.resid_guess = pmx.eval_in_model(resid)
         self.model = model
     
-    def plot_lc(self,point='guess',posterior_dist=False,
+    def plot_lc(self,point='guess',
                 mxap_soln=None,xdataset=None):
         """
         plot the lightcurve data and models
@@ -828,13 +828,13 @@ class starry_basemodel():
             londeg = statDict['lonfit_arr']
             latdeg = statDict['latfit_arr']
             x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
-            ax.plot(x_proj,y_proj,'.',color='black')
+            ax.plot(x_proj,y_proj,'.',color='black',zorder=10)
             
 
             ## show the original hotspot fit
             x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(59.573,
                                                                           47.988)
-            ax.plot([x_proj_t],[y_proj_t],'o')
+            ax.plot([x_proj_t],[y_proj_t],'o',markersize=20)
             
             ## show the fit to the mean map
             londeg_m = statDict['meanMap_hspot_lon']
@@ -842,7 +842,8 @@ class starry_basemodel():
             x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
                                                                           latdeg_m)
             
-            ax.plot([x_proj_m],[y_proj_m],'+',markersize=0,color='darkgreen')
+            ax.plot([x_proj_m],[y_proj_m],'+',markersize=20,color='darkgreen',
+                    markeredgewidth=5)
             ax.set_title(oneMap)
             
             
