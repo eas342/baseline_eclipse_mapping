@@ -283,23 +283,29 @@ class starry_basemodel():
         
         
         fig, (ax,ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
-        ax.plot(self.x,self.y,'.',label='data')
-        ax.plot(self.x,f,label='GP model',color= u'#ff7f0e')
-        ax.plot(self.x,f_astroph,label='Astrophysical Component',color='green')
+        
+        if self.systematics == 'Flat':
+            dataColor = '#FF9B54' ## Sandy brown
+        else:
+            dataColor = '#720026' ## Claret
+        
+        
+        ax.plot(self.x,self.y,'.',label='data',color=dataColor)
+        ax.plot(self.x,f,label='GP model',color= "#FF7F51")
+        ax.plot(self.x,f_astroph,label='Astrophysical Component',color="black")
         
         if point == 'posterior':
             ## full GP model
             ax.fill_between(self.x,lim_final_lc[0,:],lim_final_lc[1,:],
-                            color=u'#ff7f0e')
+                            color="#FF7F51")
             ## astrophysical component
             ax.fill_between(self.x,lim_astroph_lc[0,:],lim_astroph_lc[1,:],
-                            color='green',alpha=0.6)
-        
+                            color="black",alpha=0.6)
         
         resid = self.y - f
         ax.legend()
         
-        ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.')
+        ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.',color=dataColor)
         
         if point == 'posterior':
             ax2.fill_between(self.x,(lim_final_lc[0,:] - f) * 1e6,
