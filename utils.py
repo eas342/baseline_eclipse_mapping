@@ -284,6 +284,7 @@ class starry_basemodel():
         
         fig, (ax,ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
         
+        ## Color palette from https://coolors.co/4f000b-720026-ce4257-ff7f51-ff9b54
         if self.systematics == 'Flat':
             dataColor = '#FF9B54' ## Sandy brown
         else:
@@ -963,6 +964,9 @@ def compare_corners(sb1,sb2,sph_harmonics='all',
                                                 include_sigma_lc=include_sigma_lc)
     samples2, truths2, labels2 = sb2.prep_corner(sph_harmonics=sph_harmonics,
                                                 include_sigma_lc=include_sigma_lc)
+    
+    ## Color palette from https://coolors.co/4f000b-720026-ce4257-ff7f51-ff9b54
+    
     fig1 = corner.corner(samples1,truths=truths1,
                         color='#FF9B54') # ## sandy brown
     fig2 = corner.corner(samples2,truths=truths2,
@@ -1004,6 +1008,7 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
             ax = axArr[sb1.degree + 1,extra_plot_counter]
         ax.axis('on')
         ax.yaxis.set_visible(False)
+        ## Color palette from https://coolors.co/4f000b-720026-ce4257-ff7f51-ff9b54
         ax.hist(samples1[keys1[ind]],histtype='step',color='#FF9B54',linewidth=2) ## sandy brown
         ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2) ## Claret
         
