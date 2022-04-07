@@ -16,9 +16,45 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb.plot_lc(point='mxap')
 
 
-def make_sb_objects(map_type='variable',lc_name='NC_HD189',
-                    map_prior='physical',degree=3):
+def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
+                           map_prior='physical',degree=3,):
+    """
+    Make a pair of starry basemodel objects with no GP applied to the flat 
+    nor the baseline trend model
+    """
     
+    sb0, sb1 = make_sb_objects(map_type=map_type,lc_name=lc_name,
+                               map_prior=map_prior,degree=degree,
+                               use_gp_list = [False,False])
+    
+    return sb0, sb1
+    
+
+def make_sb_objects(map_type='variable',lc_name='NC_HD189',
+                    map_prior='physical',degree=3,
+                    use_gp_list = [False,True]):
+    """
+    Make a pair of starry basemodel objects in utils.
+    Generally, used to compare data with and without baselines
+    
+    Parameters
+    -----------
+    
+    map_type: str
+        Map type "fixed" fixes it at uniform. "variable" solves for sph harmonics
+    lc_name: str
+        Name of the lightcurve ('NC_HD189' uses a NIRCam lightcurve for HD 189733)
+                                 'orig' is the original lightcurve at high precision
+    map_prior: str
+        What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+        and 'uniformPixels' does pixel sampling to ensure the pixels are non-negative
+        'non-physical' allows the spherical harmonics to be postive or negative
+    degree: int
+        The spherical harmonic degree
+    use_gp_list: 2 element list of booleans
+        FOr the 
+    
+    """
     if degree == 3:
         degree_descrip = ''
     else:
@@ -33,7 +69,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
     
     if lc_name == 'NC_HD189':
         systematics=['Flat','Quadratic']
-        systematics_abbrev = ['flat_no_gp','quad']
+        systematics_abbrev = ['flat','quad']
         
         descrips = []
         for systematics_descrip in systematics_abbrev:
@@ -43,7 +79,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
     elif lc_name == 'NC_HD189cubic':
         systematics=['Flat','Cubic']
-        systematics_abbrev = ['flat_no_gp','cubic']
+        systematics_abbrev = ['flat','cubic']
         
         descrips = []
         for systematics_descrip in systematics_abbrev:
@@ -54,7 +90,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
     elif lc_name == 'orig':
         systematics=['Flat','Cubic']
         
-        descrips_basenames = ['Flat_001_no_gp','Orig_006_newrho_smallGP']
+        descrips_basenames = ['Flat_001','Orig_006_newrho_smallGP']
         
         descrips = []
         for descrip_basename in descrips_basenames:
@@ -64,12 +100,18 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
-    use_gp_list = [False,True]
+    
     
     sb_list = []
     for ind,sys_type in enumerate(systematics):
+        thisDescription = descrips[ind]
+        if use_gp_list[ind] == True:
+            pass
+        else:
+            thisDescription = thisDescription + '_no_gp'
+        
         sb = utils.starry_basemodel(dataPath=dataPath,
-                                    descrip=descrips[ind],
+                                    descrip=thisDescription,
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type,degree=degree,
                                     map_prior=map_prior,use_gp=use_gp_list[ind])
