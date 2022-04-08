@@ -1009,8 +1009,10 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
         ax.axis('on')
         ax.yaxis.set_visible(False)
         ## Color palette from https://coolors.co/4f000b-720026-ce4257-ff7f51-ff9b54
-        ax.hist(samples1[keys1[ind]],histtype='step',color='#FF9B54',linewidth=2) ## sandy brown
-        ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2) ## Claret
+        ax.hist(samples1[keys1[ind]],histtype='step',color='#FF9B54',linewidth=2,
+                density=True) ## sandy brown
+        ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2,
+                density=True) ## Claret
         
         ax.axvline(truths1[ind],color='blue',linestyle='dashed')
         
