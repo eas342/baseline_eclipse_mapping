@@ -168,13 +168,24 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   degree=degree)
     
 
-def run_all_inference_tests(map_prior='physical'):
+def run_all_inference_tests(map_prior='physical',degrees=[3,2]):
     """
-    Run all inference tests
-    map
+    Run all inference tests for both planets for flat versus non-flat baselines
+    
+    Parameters
+    ----------
+    map_prior: str
+        What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+        and 'uniformPixels' does pixel sampling to ensure the pixels are non-negative
+        'non-physical' allows the spherical harmonics to be postive or negative
+    
+    degrees: 2 element list of ints
+        List of spherical harmonics to use for the Idealized and HD 189733 b planets
     """
-    for lc_name in ['orig','NC_HD189']:
-        run_inference(lc_name=lc_name,map_prior=map_prior)
+    
+    for ind,lc_name in enumerate(['orig','NC_HD189']):
+        run_inference(lc_name=lc_name,map_prior=map_prior,degree=degrees[ind])
+        
 
 def run_all_inference_px_sampling():
     run_all_inference_tests(map_prior='uniformPixels')
