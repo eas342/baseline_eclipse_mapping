@@ -642,6 +642,31 @@ class starry_basemodel():
         print("Saving BIC statistics to {}".format(outName))
         t.write(outName,overwrite=True)
     
+    def plot_px_sampling(self,sys=None,xdata=None):
+        """
+        Plot the result of pixel sampling to to see those results
+        """
+        if sys == None:
+            self.build_model()
+            sys = self.sys
+        
+        if xdata is None:
+            self.find_posterior()
+            with self.model:
+                xdata = arviz.convert_to_dataset(self.trace)
+        
+        b_map = sys.secondaries[0].map
+        lat_t, lon_t, Y2P, P2Y, Dx, Dy = b_map.get_pixel_transforms(oversample=2)
+        
+        px_2D = flatten_chains(xdata['p'])
+        meanPix = np.mean(px_2D,axis=0)
+        errPix = np.std(px_2D,axis=0)
+    
+        titles = ['Mean','Error']
+        for ind, pixToPlot in enumerate([meanPix,errPix]):
+            fig, ax = plot_pixels(pixToPlot,lon_t,lat_t,title=titles[ind])
+            fig.savefig(os.path.join('plots','pix_samp_stats',"{}_{}.pdf".format(self.descrip,titles[ind])))
+    
     def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
                          res=100,projection='ortho'):
         """
@@ -876,6 +901,23 @@ class starry_basemodel():
             self.calc_BIC()
             
 
+def plot_pixels(pixels,lon_t,lat_t,title="",returnFig=True):
+    """
+    Plot the pixels used in pixel sampling
+    """
+    cm = plt.cm.get_cmap('plasma')
+    fig, ax = plt.subplots()
+    res = ax.scatter(lon_t, lat_t,c=pixels,cmap=cm,marker='s',s=500)
+    fig.colorbar(res)
+    ax.set_xlabel("Longitude (deg)")
+    ax.set_ylabel("Latitude (deg)")
+    ax.set_title(title)
+    if returnFig == True:
+        return fig, ax
+    else:
+        fig.show()
+    
+    
 def flatten_chains(trace3D):
     """
     Flatten points in the chain to give distributions across all chains

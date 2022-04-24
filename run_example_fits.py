@@ -2,6 +2,7 @@ import utils
 from astropy.io import fits, ascii
 import os
 import numpy as np
+import arviz
 
 def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     """
@@ -209,6 +210,18 @@ def sb_px_sampling_obj():
                                 systematics='Flat',degree=3,
                                 map_prior='uniformPixels',use_gp=False)
     return sb
+
+def plot_px_sampling(xdata=None,sb=None):
+    """
+    Plot the result of pixel sampling to to see those results
+    """
+    if sb == None:
+        sb = sb_px_sampling_obj()
+        sb.find_posterior()
+        xdata = arviz.convert_to_dataset(sb.trace)
+    
+    sb.plot_px_sampling()
+
 
 if __name__ == "__main__":
     run_all_inference_tests()
