@@ -233,8 +233,8 @@ def posterior_ratios():
     """
     compare_idealized = ['Orig_006_newrho_smallGPphys_maptype_variable_amp_type_variable_stats.csv',
                          'Flat_001_no_gpphys_maptype_variable_amp_type_variableFlat_stats.csv']
-    compare_HD189 = ['quad_HD189NCphysPMass_maptype_variable_amp_type_variableQuadratic_stats.csv',
-                     'flat_no_gp_HD189NCphysPMass_maptype_variable_amp_type_variableFlat_stats.csv']
+    compare_HD189 = ['quad_HD189NCphysPMass_deg2_maptype_variable_amp_type_variableQuadratic_stats.csv',
+                     'flat_no_gp_HD189NCphysPMass_deg2_maptype_variable_amp_type_variableFlat_stats.csv']
     compare_pairs = [compare_idealized,compare_HD189]
     compare_planet_names = ['Idealized','HD_189733_b']
     ratio_name = ['systematics over flat ratio']
