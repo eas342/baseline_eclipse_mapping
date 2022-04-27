@@ -27,6 +27,8 @@ theano_logger_tensor_opt.setLevel(logging.CRITICAL)
 
 forward_model_degree = 3
 
+res_for_physical_check = 100
+
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
                  descrip='Orig_006_newrho_smallGP',
@@ -51,10 +53,11 @@ class starry_basemodel():
         degree: int
             The spherical harmonic degree
         map_prior: str
-            What priors are put on the plot? 'phys' ensures physical (non-negative priors)
+            What priors are put on the plot?
+            'physical' ensures physical (non-negative maps)
             'uniformPixels' assumes all pixels are uniform (times amplitude) and therefore physical
             'non-physical' allows the spherical harmonics to be postive or negative
-    
+            'physicalVisible' ensures physical (non-negative maps over visible longitudes)
         """
         
         
@@ -78,6 +81,10 @@ class starry_basemodel():
         self.data_path = dataPath
         self.get_data(path=self.data_path)
         self.map_prior = map_prior
+        
+        if self.map_prior == 'physicalVisible':
+            self.calc_visible_lon()
+    
     
     def get_data(self,path):
         """ Gather the data
@@ -95,6 +102,18 @@ class starry_basemodel():
         
         self.yerr = np.ascontiguousarray(self.dat['Flux err'])
         self.meta = self.dat.meta
+    
+    def calc_visible_lon(self):
+        """
+        Calculate the visible longitudes - we only have information and should place priors here
+        """
+        relTime = self.x - self.meta['Period'] * 0.5
+        self.minLon = np.min(relTime) / self.meta['Period'] * 360. - 90
+        self.maxLon = np.max(relTime) / self.meta['Period'] * 360. + 90
+        
+        tmp_map = starry.Map(ydeg=self.degree)
+        lat, lon = tmp_map.get_latlon_grid(res=res_for_physical_check,projection='rect')
+        self.pts_visible = (lon.eval() > self.minLon) & (lon.eval() < self.maxLon)
     
     def build_model(self):
         if self.mask is None:
@@ -136,11 +155,14 @@ class starry_basemodel():
                     b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
                                               testval=sec_testval)
                 
-            if self.map_prior == 'physical':
+            if (self.map_prior == 'physical') | (self.map_prior == 'physicalVisible'):
                 # Add another constraint that the map should be physical
-                map_evaluate = b_map.render(projection='rect',res=100)
+                map_evaluate = b_map.render(projection='rect',res=res_for_physical_check)
                 ## number of points that are less than zero
-                num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
+                if self.map_prior == 'physicalVisible':
+                    num_bad = pm.math.sum(pm.math.lt(map_evaluate[self.pts_visible],0))
+                else:
+                    num_bad = pm.math.sum(pm.math.lt(map_evaluate,0))
                 ## check if there are any "bad" points less than zero
                 badmap_check = pm.math.gt(num_bad, 0)
                 ## Set log probability to negative infinity if there are bad points. Otherwise set to 0.

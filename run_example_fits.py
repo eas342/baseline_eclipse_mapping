@@ -31,6 +31,19 @@ def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
     return sb0, sb1
     
 
+def make_sb_obj_with_physical_visible(map_type='variable',lc_name='NC_HD189',
+                                      degree=2):
+    """
+    Make a pair of starry basemodel objects with a physical (non-negative)
+    map but only require that over visible longitudes
+    """
+    
+    sb0, sb1 = make_sb_objects(map_type=map_type,lc_name=lc_name,
+                               map_prior='physicalVisible',degree=degree,
+                               use_gp_list = [False,False])
+    
+    return sb0, sb1
+
 def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                     map_prior='physical',degree=3,
                     use_gp_list = [False,True]):
@@ -65,6 +78,8 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         phys_descrip = 'phys'
     elif map_prior == 'uniformPixels':
         phys_descrip = 'pxSamp'
+    elif map_prior == 'physicalVisible':
+        phys_descrip = 'physVis'
     else:
         phys_descrip = 'nophys'
     
