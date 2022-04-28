@@ -184,7 +184,7 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   degree=degree)
     
 
-def run_all_inference_tests(map_prior='physical',degrees=[3,2]):
+def run_all_inference_tests(map_prior='physicalVisible',degrees=[3,2]):
     """
     Run all inference tests for both planets for flat versus non-flat baselines
     
