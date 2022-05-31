@@ -17,6 +17,10 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
     sb.plot_lc(point='mxap')
 
 
+def make_plots_for_no_gp_fit_for_paper_hd189():
+    sb0, sb1 = make_sb_obj_with_no_gp(degree=2)
+    sb1.run_all()
+
 def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
                            map_prior='physical',degree=3,):
     """
