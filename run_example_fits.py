@@ -20,9 +20,12 @@ def zero_eclipse_GP(descrip="Orig_006_newrho_smallGP"):
 def make_plots_for_no_gp_fit_for_paper_hd189():
     sb0, sb1 = make_sb_obj_with_no_gp(degree=2)
     sb1.run_all()
+    sb0_with_gp, sb1_with_gp = make_sb_objects(degree=2,use_gp_list=[False, True])
+    utils.compare_histos(sb1,sb1_with_gp,dataDescrips=['No GP, planet only','GP for systematics'])
 
 def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
-                           map_prior='physical',degree=3,):
+                           map_prior='physical',degree=3,
+                           widerSphHarmonicPriors=True):
     """
     Make a pair of starry basemodel objects with no GP applied to the flat 
     nor the baseline trend model
@@ -30,7 +33,8 @@ def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
     
     sb0, sb1 = make_sb_objects(map_type=map_type,lc_name=lc_name,
                                map_prior=map_prior,degree=degree,
-                               use_gp_list = [False,False])
+                               use_gp_list = [False,False],
+                               widerSphHarmonicPriors=widerSphHarmonicPriors)
     
     return sb0, sb1
     
@@ -50,7 +54,8 @@ def make_sb_obj_with_physical_visible(map_type='variable',lc_name='NC_HD189',
 
 def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                     map_prior='physical',degree=3,
-                    use_gp_list = [False,True]):
+                    use_gp_list = [False,True],
+                    widerSphHarmonicPriors=False):
     """
     Make a pair of starry basemodel objects in utils.
     Generally, used to compare data with and without baselines
@@ -130,11 +135,15 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         else:
             thisDescription = thisDescription + '_no_gp'
         
+        if widerSphHarmonicPriors == True:
+            thisDescription = thisDescription + '_widerSphHarmPriors'
+        
         sb = utils.starry_basemodel(dataPath=dataPath,
                                     descrip=thisDescription,
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type,degree=degree,
-                                    map_prior=map_prior,use_gp=use_gp_list[ind])
+                                    map_prior=map_prior,use_gp=use_gp_list[ind],
+                                    widerSphHarmonicPriors=widerSphHarmonicPriors)
         sb_list.append(sb)
     
     return sb_list

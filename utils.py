@@ -34,7 +34,9 @@ class starry_basemodel():
                  descrip='Orig_006_newrho_smallGP',
                  map_type='variable',amp_type='variable',
                  systematics='Cubic',use_gp=True,
-                 degree=3,map_prior='physical'):
+                 degree=3,map_prior='physical',
+                 widerSphHarmonicPriors=False,
+                 ):
         """
         Set up a starry model
         dataPath: str
@@ -58,6 +60,9 @@ class starry_basemodel():
             'uniformPixels' assumes all pixels are uniform (times amplitude) and therefore physical
             'non-physical' allows the spherical harmonics to be postive or negative
             'physicalVisible' ensures physical (non-negative maps over visible longitudes)
+        widerSphHarmonicPriors: bool
+            Put wider priors on the spherical harmonic coefficients?
+            As of 2022-06-02, when widerSphHarmoincPriors is True, it is 3.0, otherwise 0.5.
         """
         
         
@@ -81,6 +86,8 @@ class starry_basemodel():
         self.data_path = dataPath
         self.get_data(path=self.data_path)
         self.map_prior = map_prior
+        
+        self.widerSphHarmonicPriors = widerSphHarmonicPriors
         
         if self.map_prior == 'physicalVisible':
             self.calc_visible_lon()
@@ -141,12 +148,15 @@ class starry_basemodel():
             ncoeff = b_map.Ny - 1
             if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
                 sec_mu = np.zeros(ncoeff)
-                sec_testval = np.ones(ncoeff) * 0.05
-                sec_cov = 0.5**2 * np.eye(ncoeff)
             else:
                 sec_mu = np.ones(ncoeff) * 0.05
-                sec_testval = np.ones(ncoeff) * 0.05
+
+            if self.widerSphHarmonicPriors == True:
+                sec_cov = 3.0**2 * np.eye(ncoeff)
+            else:
                 sec_cov = 0.5**2 * np.eye(ncoeff)
+            
+            sec_testval = np.ones(ncoeff) * 0.05
             
             if self.map_type == 'variable':
                 if self.map_prior == 'uniformPixels':
