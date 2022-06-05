@@ -135,7 +135,10 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
+                if (self.systematics != 'Flat') & (self.use_gp == False):
+                    ## special starting point for fitting the baseline trend with an astrophysical-only model
+                    b_map.amp = pm.Normal("amp",mu=4.4e-3,sd=1e-3)
+                elif self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
                     b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
                 else:
                     b_map.amp = pm.Normal("amp", mu=1.0e-3, sd=0.2e-3)
@@ -156,7 +159,18 @@ class starry_basemodel():
             else:
                 sec_cov = 0.5**2 * np.eye(ncoeff)
             
-            sec_testval = np.ones(ncoeff) * 0.05
+            ## special starting point for fitting the baseline trend with an astrophysical-only model
+            if (self.systematics != 'Flat') & (self.use_gp == False):
+                sec_testval = np.ones(ncoeff) * 0.05
+                sec_testval[0] = -0.3
+                sec_testval[1] = -0.2
+                sec_testval[2] = -0.2
+                sec_testval[3] = 0.25
+                sec_testval[4] = 0.25
+                sec_testval[3] = 0.2
+                sec_testval[6] = 0.25
+            else:
+                sec_testval = np.ones(ncoeff) * 0.05
             
             if self.map_type == 'variable':
                 if self.map_prior == 'uniformPixels':
