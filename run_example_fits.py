@@ -24,7 +24,7 @@ def make_plots_for_no_gp_fit_for_paper_hd189():
     utils.compare_histos(sb1,sb1_with_gp,dataDescrips=['No GP, planet only','GP for systematics'])
 
 def make_sb_obj_with_no_gp(map_type='variable',lc_name='NC_HD189',
-                           map_prior='physical',degree=3,
+                           map_prior='physical',degree=2,
                            widerSphHarmonicPriors=True):
     """
     Make a pair of starry basemodel objects with no GP applied to the flat 
@@ -48,7 +48,7 @@ def make_sb_obj_with_physical_visible(map_type='variable',lc_name='NC_HD189',
     
     sb0, sb1 = make_sb_objects(map_type=map_type,lc_name=lc_name,
                                map_prior='physicalVisible',degree=degree,
-                               use_gp_list = [False,False])
+                               use_gp_list = [False,True])
     
     return sb0, sb1
 
