@@ -137,7 +137,7 @@ class starry_basemodel():
             if self.amp_type == 'variable':
                 if (self.systematics != 'Flat') & (self.use_gp == False):
                     ## special starting point for fitting the baseline trend with an astrophysical-only model
-                    b_map.amp = pm.Normal("amp",mu=4.4e-3,sd=1e-3)
+                    b_map.amp = pm.Normal("amp",mu=8e-3,sd=3e-3,testval=7.96e-3)
                 elif self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
                     b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
                 else:
@@ -161,14 +161,36 @@ class starry_basemodel():
             
             ## special starting point for fitting the baseline trend with an astrophysical-only model
             if (self.systematics != 'Flat') & (self.use_gp == False):
-                sec_testval = np.ones(ncoeff) * 0.05
-                sec_testval[0] = -0.3
-                sec_testval[1] = -0.2
-                sec_testval[2] = -0.2
-                sec_testval[3] = 0.25
-                sec_testval[4] = 0.25
-                sec_testval[3] = 0.2
-                sec_testval[6] = 0.25
+                if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
+                    sec_testval = np.ones(ncoeff) * 0.05
+                    sec_testval[0] = -0.007859293
+                    sec_testval[1] = -0.835240905
+                    sec_testval[2] = -0.283952744
+                    sec_testval[3] = 0.043684361
+                    sec_testval[4] = 0.027140908
+                    sec_testval[5] = 0.320690373
+                    sec_testval[6] = 0.231961818
+                    sec_testval[7] = 0.072216754
+                elif self.data_path == 'sim_data/sim_data_baseline.ecsv':
+                    sec_testval = np.ones(ncoeff) * 0.05
+                    #b_map.amp = 0.001713124
+                    sec_testval[0]  =  0.022510962
+                    sec_testval[1]  = -0.324044523
+                    sec_testval[2]  = -0.577761492
+                    sec_testval[3]  = -0.017554392
+                    sec_testval[4]  =  0.006931265
+                    sec_testval[5]  = -0.079876756
+                    sec_testval[6]  =  0.432600892
+                    sec_testval[7]  =  0.082596346
+                    sec_testval[8]  =  0.051566744
+                    sec_testval[9]  =  0.045439951
+                    sec_testval[10] =  0.020441333
+                    sec_testval[11] =  0.171206877
+                    sec_testval[12] =  0.068013531
+                    sec_testval[13] = -0.017282164
+                    sec_testval[14] =  0.0284655
+                else:
+                    sec_testval = np.ones(ncoeff) * 0.05
             else:
                 sec_testval = np.ones(ncoeff) * 0.05
             
@@ -386,6 +408,7 @@ class starry_basemodel():
                 self.build_model()
         
             with self.model:
+                optArgs = {'method':'Nelder-Mead','maxiter':9999}
                 soln1 = pmx.optimize(vars=[self.model.amp])
                 if self.use_gp == True:
                     gp_vars = [self.model.sigma_gp,
