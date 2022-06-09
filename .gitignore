@@ -28,3 +28,4 @@ plots/map_stats/pix_sampling/
 fit_data/lc_BIC/lc_BIC_summary.txt
 plots/histos/comparison_histo_from_paper_backup/
 plots/map_stats/backup_from_paper_draft/
+*.mov
