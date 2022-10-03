@@ -917,8 +917,13 @@ class starry_basemodel():
                 outName = 'resid_{}.pdf'.format(self.descrip)
                 colorbarLabel = '$I_{resid}$ ($\sigma$)'
                 keyName = 'residSigma'
-                vmin, vmax = None, None
+                
                 multiplier = 1.0
+                
+                maxDeviation = np.nanmax(np.abs(statDict[keyName])) * multiplier
+                
+                vmin, vmax = -maxDeviation, maxDeviation
+                
                 cmap = 'PiYG'
             
             im = ax.imshow(statDict[keyName] * multiplier,origin='lower',
