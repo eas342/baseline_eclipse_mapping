@@ -10,14 +10,40 @@ import pdb
 class hotspot_fitter(object):
     
     def __init__(self,map2D,lon,lat,err2D=None,
-                 xstart=50,xend=80,ystart=50,yend=90):
+                 xstart=50,xend=80,ystart=50,yend=90,
+                 guess_x=50,guess_y=40):
         """
         Class for fitting a hotspot
+
+        Parameters
+        -----------
+        map2D: numpy array
+            The 2D full map
+        lon: numpy array
+            The 2D full longitude coordinate map
+        lat: numpy aray
+            The 2D full latitude coordinate map
+        err2D: numpy array
+            The 2D full error map
+        xstart: int or float
+            Minimum x index coordinate to fit (unitless)
+        xend: int or float
+            Maximum x index coordinate to fit (unitless)
+        ystart: int or float
+            Minimum y index coordinate to fit (unitless)
+        yend: int or float
+            Maximum y index coordinate to fit (unitless)
+        guess_x: float
+            Guess longitude (in degrees)
+        guess_y: float
+            Guess latitude (in degrees)
         """
-        self.p_init = models.Gaussian2D(amplitude=0.7,x_mean=50,y_mean=40,
+        self.p_init = models.Gaussian2D(amplitude=0.7,
+                                        x_mean=guess_x,
+                                        y_mean=guess_y,
                                         x_stddev=30,y_stddev=30)
         
-        self.p_init.amplitude.min = 0
+        self.p_init.amplitude.min = 0 ## don't fit a cold spot
         self.p_init.x_mean.bounds = (lon[0,xstart],lon[0,xend])
         self.p_init.y_mean.bounds = (lat[ystart,0],lat[yend,0])
         self.p_init.x_stddev.bounds = (1,(lon[0,xend] - lon[0,xstart]) * 2)
