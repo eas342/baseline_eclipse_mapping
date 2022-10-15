@@ -131,8 +131,8 @@ class hotspot_fitter(object):
     
     def return_peak(self):
         self.check_for_fit()
-        lon_fit = self.p_fit.y_mean.value
-        lat_fit = self.p_fit.x_mean.value
+        lat_fit = self.p_fit.y_mean.value
+        lon_fit = self.p_fit.x_mean.value
         
         return lon_fit, lat_fit
     
