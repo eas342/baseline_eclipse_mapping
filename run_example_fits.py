@@ -125,10 +125,27 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append("{}{}{}".format(descrip_basename,phys_descrip,degree_descrip))
         
         dataPath='sim_data/sim_data_baseline.ecsv'
+    elif lc_name == 'GCM01_HD189':
+        systematics = ['Flat','Cubic']
+        systematics_abbrev = ['flat','cubic']
+
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_GCM01_HD189NC{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
+        
+        dataPath = 'sim_data/gcm01_sim_data_cubic_baseline_hd189_ncF444W.ecsv'
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
-    
+    if lc_name == 'GCM01_HD189':
+        hotspotGuess_param = {'xstart':40,'xend':95,
+                              'ystart':30,'yend':70,
+                              'guess_x':30,'guess_y':0}
+        inputLonLat=[52.447,1.3631]
+    else:
+        hotspotGuess_param = {}
+        inputLonLat=[59.573,47.988]
     
     sb_list = []
     for ind,sys_type in enumerate(systematics):
@@ -146,7 +163,9 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                                     map_type=map_type,amp_type='variable',
                                     systematics=sys_type,degree=degree,
                                     map_prior=map_prior,use_gp=use_gp_list[ind],
-                                    widerSphHarmonicPriors=widerSphHarmonicPriors)
+                                    widerSphHarmonicPriors=widerSphHarmonicPriors,
+                                    hotspotGuess_param=hotspotGuess_param,
+                                    inputLonLat=inputLonLat)
         sb_list.append(sb)
     
     return sb_list
@@ -199,6 +218,13 @@ def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
                                   lc_name=lc_name,map_prior=map_prior,
                                   degree=degree)
     
+
+def run_gcm01_inference():
+    """
+    Run the inference tests with the GCM01 as the forward model
+    """
+    run_inference(lc_name='GCM01_HD189',degree=2)
+
 
 def run_all_inference_tests(map_prior='physicalVisible',degrees=[3,2]):
     """
