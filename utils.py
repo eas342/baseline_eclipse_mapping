@@ -36,7 +36,8 @@ class starry_basemodel():
                  systematics='Cubic',use_gp=True,
                  degree=3,map_prior='physical',
                  widerSphHarmonicPriors=False,
-                 ):
+                 hotspotGuess_param={},
+                 inputLonLat=[None,None]):
         """
         Set up a starry model
         dataPath: str
@@ -63,6 +64,11 @@ class starry_basemodel():
         widerSphHarmonicPriors: bool
             Put wider priors on the spherical harmonic coefficients?
             As of 2022-06-02, when widerSphHarmoincPriors is True, it is 3.0, otherwise 0.5.
+        hotspotGuess_param: dict
+            Dictionary of hotspot guess and window parameters.
+            eg. {'xstart': 50, 'xend':80,'ystart':50,'yend':90,
+                 'guess_x':50,'guess_y':40}
+                 or else hotspotGuess_param = {} will use defaults
         """
         
         
@@ -91,7 +97,10 @@ class starry_basemodel():
         
         if self.map_prior == 'physicalVisible':
             self.calc_visible_lon()
-    
+        
+        self.hotspotGuess_param = hotspotGuess_param
+        self.inputLonLat = inputLonLat
+
     
     def get_data(self,path):
         """ Gather the data
@@ -821,7 +830,8 @@ class starry_basemodel():
                     eval2Drect = b_map.render(res=res,projection='rect').eval()
                     map_samples_rect[counter] = eval2Drect
                 
-                hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect)
+                hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect,
+                                                   **self.hotspotGuess_param)
                 
                 lonfit, latfit = hf.return_peak()
                 lonfit_arr[counter] = lonfit
@@ -865,7 +875,8 @@ class starry_basemodel():
             
             hf = hotspot_fitter.hotspot_fitter(resultDict['meanMap_rect'],
                                                resultDict['lon_rect'],
-                                               resultDict['lat_rect'])
+                                               resultDict['lat_rect'],
+                                               **self.hotspotGuess_param)
             hf.fit_model()
             resultDict['meanMap_hspot_lon'] = hf.p_fit.x_mean.value
             resultDict['meanMap_hspot_lat'] = hf.p_fit.y_mean.value
@@ -938,8 +949,8 @@ class starry_basemodel():
             
 
             ## show the original hotspot fit
-            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(59.573,
-                                                                          47.988)
+            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(self.inputLonLat[0],
+                                                                          self.inputLonLat[1])
             ax.plot([x_proj_t],[y_proj_t],'o',markersize=20)
             
             ## show the fit to the mean map
