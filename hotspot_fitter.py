@@ -10,7 +10,7 @@ import pdb
 class hotspot_fitter(object):
     
     def __init__(self,map2D,lon,lat,err2D=None,
-                 xstart=50,xend=80,ystart=50,yend=90,
+                 xstart=50,xend=80,ystart=50,yend=99,
                  guess_x=50,guess_y=40):
         """
         Class for fitting a hotspot
