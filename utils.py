@@ -17,6 +17,7 @@ import logging
 import theano.tensor as tt
 import hotspot_fitter
 import arviz
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -890,7 +891,7 @@ class starry_basemodel():
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
     
-    def plot_map_statistics(self,statDict=None):
+    def plot_map_statistics(self,statDict=None,projection='rect'):
         """
         Plot the maps for random draws or calculate stats on them
         
@@ -899,10 +900,12 @@ class starry_basemodel():
         statDict: dict (optional)
             A dictionary of statistics results. This is mainly to save time when
             re-running to plot if you already saved the dictionary
-        
+        projection: str
+            The map projection to show ('ortho' or 'rect')
         """
         if statDict is None:
-            statDict = self.get_random_draws(calcStats=True,n_draws=40)
+            statDict = self.get_random_draws(calcStats=True,n_draws=40,
+                                             projection=projection)
         
         for ind,oneMap in enumerate(['Mean','Error','Residual']):
             fig, ax = plt.subplots()
@@ -936,37 +939,61 @@ class starry_basemodel():
                 vmin, vmax = -maxDeviation, maxDeviation
                 
                 cmap = 'PiYG'
-            
+
+            if projection == 'ortho':
+                extent = [-1,1,-1,1]
+            else:
+                extent = [-180,180,-90,90]
+
             im = ax.imshow(statDict[keyName] * multiplier,origin='lower',
                            vmin=vmin,vmax=vmax,cmap=cmap,
-                           extent=[-1,1,-1,1])
+                           extent=extent)
             
             ## show fits to individual map draws
             londeg = statDict['lonfit_arr']
             latdeg = statDict['latfit_arr']
-            x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
+            if projection == 'ortho':
+                x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
+            else:
+                x_proj, y_proj = londeg, latdeg
+            
             ax.plot(x_proj,y_proj,'.',color='black',zorder=10)
             
 
             ## show the original hotspot fit
-            x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(self.inputLonLat[0],
-                                                                          self.inputLonLat[1])
+            if projection == 'ortho':
+                x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(self.inputLonLat[0],
+                                                                              self.inputLonLat[1])
+            else:
+                x_proj_t, y_proj_t = self.inputLonLat[0], self.inputLonLat[1]
+            
             ax.plot([x_proj_t],[y_proj_t],'o',markersize=20)
             
             ## show the fit to the mean map
             londeg_m = statDict['meanMap_hspot_lon']
             latdeg_m = statDict['meanMap_hspot_lat']
-            x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
-                                                                          latdeg_m)
-            
+            if projection == 'ortho':
+                x_proj_m, y_proj_m = hotspot_fitter.find_unit_circ_projection(londeg_m,
+                                                                              latdeg_m)
+            else:
+                x_proj_m, y_proj_m = londeg_m, latdeg_m
+
             ax.plot([x_proj_m],[y_proj_m],'+',markersize=20,color='darkgreen',
                     markeredgewidth=5)
             ax.set_title(oneMap)
             
-            
-            fig.colorbar(im,label=colorbarLabel)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+
+            fig.colorbar(im,label=colorbarLabel,cax=cax)
             #hide axes
-            ax.axis('off')
+            if projection == 'ortho':
+                ax.axis('off')
+            else:
+                ax.set_xlabel("Longitude ($^\circ$)")
+                ax.set_ylabel("Latitude ($^\circ$)")
+                self.calc_visible_lon()
+                ax.set_xlim(self.minLon,self.maxLon)
             #ax.get_xaxis().set_visible(False)
             #ax.get_yaxis().set_visible(False)
             
