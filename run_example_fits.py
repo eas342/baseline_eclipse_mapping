@@ -105,6 +105,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W.ecsv'
+        vminmaxDef = [0.0,1.1]
     elif lc_name == 'NC_HD189cubic':
         systematics=['Flat','Cubic']
         systematics_abbrev = ['flat','cubic']
@@ -115,6 +116,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_cubic_baseline_hd189_ncF444W.ecsv'
+        vminmaxDef = [0.0,1.1]
     elif lc_name == 'orig':
         systematics=['Flat','Cubic']
         
@@ -125,6 +127,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append("{}{}{}".format(descrip_basename,phys_descrip,degree_descrip))
         
         dataPath='sim_data/sim_data_baseline.ecsv'
+        vminmaxDef = [0.0,0.7]
     elif lc_name == 'GCM01_HD189':
         systematics = ['Flat','Cubic']
         systematics_abbrev = ['flat','cubic']
@@ -135,6 +138,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             descrips.append(thisDescrip)
         
         dataPath = 'sim_data/gcm01_sim_data_cubic_baseline_hd189_ncF444W.ecsv'
+        vminmaxDef = [0.0,0.7]
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
@@ -165,7 +169,8 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                                     map_prior=map_prior,use_gp=use_gp_list[ind],
                                     widerSphHarmonicPriors=widerSphHarmonicPriors,
                                     hotspotGuess_param=hotspotGuess_param,
-                                    inputLonLat=inputLonLat)
+                                    inputLonLat=inputLonLat,
+                                    vminmaxDef=vminmaxDef)
         sb_list.append(sb)
     
     return sb_list

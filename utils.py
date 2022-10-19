@@ -38,7 +38,8 @@ class starry_basemodel():
                  degree=3,map_prior='physical',
                  widerSphHarmonicPriors=False,
                  hotspotGuess_param={},
-                 inputLonLat=[None,None]):
+                 inputLonLat=[None,None],
+                 vminmaxDef=[None,None]):
         """
         Set up a starry model
         dataPath: str
@@ -70,6 +71,8 @@ class starry_basemodel():
             eg. {'xstart': 50, 'xend':80,'ystart':50,'yend':90,
                  'guess_x':50,'guess_y':40}
                  or else hotspotGuess_param = {} will use defaults
+        vminmaxDef: list of 2 floats or [None,None]
+            The default value minimum and maximum for the mean map plot
         """
         
         
@@ -101,7 +104,8 @@ class starry_basemodel():
         
         self.hotspotGuess_param = hotspotGuess_param
         self.inputLonLat = inputLonLat
-
+        
+        self.vminmaxDef = vminmaxDef
     
     def get_data(self,path):
         """ Gather the data
@@ -131,6 +135,7 @@ class starry_basemodel():
         tmp_map = starry.Map(ydeg=self.degree)
         lat, lon = tmp_map.get_latlon_grid(res=res_for_physical_check,projection='rect')
         self.pts_visible = (lon.eval() > self.minLon) & (lon.eval() < self.maxLon)
+        
     
     def build_model(self):
         if self.mask is None:
@@ -915,7 +920,7 @@ class starry_basemodel():
                 outName = 'mean_{}.pdf'.format(self.descrip)
                 colorbarLabel = 'I$_p$ (ppt)'
                 keyName = 'meanMap'
-                vmin, vmax = None, None
+                vmin, vmax = self.vminmaxDef
                 multiplier = 1e3
                 cmap = 'plasma'
             elif oneMap == 'Error':
