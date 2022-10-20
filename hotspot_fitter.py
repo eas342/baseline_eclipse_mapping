@@ -6,6 +6,7 @@ import os
 from astropy.modeling import models, fitting
 import warnings
 import pdb
+from scipy.interpolate import interp1d
 
 class hotspot_fitter(object):
     
@@ -168,6 +169,36 @@ class hotspot_fitter(object):
         
         x_proj, y_proj = find_unit_circ_projection(londeg,latdeg)
         return x_proj, y_proj
+    
+    def check_cross_sections(self):
+        """
+        Plot the cross sections of the map and best fit model
+        """
+        self.check_for_fit()
+        peak_latdeg = self.p_fit.y_mean.value
+        peak_londeg = self.p_fit.x_mean.value
+        nY, nX = self.map2D.shape
+        latFun = interp1d(self.lat[:,nX//2],np.arange(nY))
+        peak_latInd = int(latFun(peak_latdeg))
+        lonFun = interp1d(self.lon[nY//2,:],np.arange(nX))
+        peak_lonInd = int(lonFun(peak_londeg))
+
+        y_ind1 = 70
+        fig, (ax,ax2) = plt.subplots(1,2,sharey=True,figsize=(10,4))
+        ax.plot(self.lon[peak_latInd,:],self.map2D[peak_latInd,:])
+        model2D = self.p_fit(self.lon,self.lat)
+        ax.plot(self.lon[peak_latInd,self.xstart:self.xend],
+                model2D[peak_latInd,self.xstart:self.xend],
+                label='Model')
+        ax.axvline(self.p_fit.x_mean.value,color='black',
+                   linestyle='dashed',label='Peak')
+        ax.set_xlabel("Longitude")
+        ax.legend()
+
+        ax2.plot(self.lat[:,peak_lonInd],self.map2D[:,peak_lonInd])
+        ax2.plot(self.lat[self.ystart:self.yend,peak_lonInd],model2D[self.ystart:self.yend,peak_lonInd])
+        ax2.axvline(self.p_fit.y_mean.value,color='black',linestyle='dashed')
+        ax2.set_xlabel("Latitude")
 
 
 def find_unit_circ_projection(londeg,latdeg):
