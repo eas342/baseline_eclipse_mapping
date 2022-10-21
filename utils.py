@@ -104,7 +104,7 @@ class starry_basemodel():
         
         self.hotspotGuess_param = hotspotGuess_param
         self.inputLonLat = inputLonLat
-        
+
         self.vminmaxDef = vminmaxDef
     
     def get_data(self,path):
@@ -114,7 +114,7 @@ class starry_basemodel():
         #self.tref = np.round(np.min(self.dat['Time (days)']))
         self.x = np.ascontiguousarray(self.dat['Time (days)'])# - self.tref)
         
-        if (self.systematics == 'Cubic') | (self.systematics == 'Quadratic'):
+        if (self.systematics == 'Cubic') | (self.systematics == 'Quadratic') | (self.systematics == 'Real'):
             self.y = np.ascontiguousarray(self.dat['Flux'])
         elif self.systematics == 'Flat':
             self.y = np.ascontiguousarray(self.dat['Flux before Baseline'])
@@ -126,11 +126,15 @@ class starry_basemodel():
     
     def calc_visible_lon(self):
         """
-        Calculate the visible longitudes - we only have information and should place priors here
+        Calculate the visible longitudes - we only havere information and should place priors here
         """
-        relTime = self.x - self.meta['Period'] * 0.5
-        self.minLon = np.min(relTime) / self.meta['Period'] * 360. - 90
-        self.maxLon = np.max(relTime) / self.meta['Period'] * 360. + 90
+        self.midEclipse = self.meta['t0'] + self.meta['Period'] * 0.5
+        eclipsePhase = np.mod((self.x - self.midEclipse)/self.meta['Period'],1.0)
+        ptsHigh = eclipsePhase > 0.6
+        eclipsePhase[ptsHigh] = eclipsePhase[ptsHigh] - 1.0
+        self.minLon = np.min(eclipsePhase) * 360. - 90.
+        self.maxLon = np.max(eclipsePhase) * 360. + 90.
+        
         
         tmp_map = starry.Map(ydeg=self.degree)
         lat, lon = tmp_map.get_latlon_grid(res=res_for_physical_check,projection='rect')
@@ -832,7 +836,7 @@ class starry_basemodel():
                 
                 if projection == 'rect':
                     eval2Drect = map_samples[counter]
-                else:
+                else: 
                     eval2Drect = b_map.render(res=res,projection='rect').eval()
                     map_samples_rect[counter] = eval2Drect
                 
