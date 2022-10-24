@@ -39,7 +39,8 @@ class starry_basemodel():
                  widerSphHarmonicPriors=False,
                  hotspotGuess_param={},
                  inputLonLat=[None,None],
-                 vminmaxDef=[None,None]):
+                 vminmaxDef=[None,None],
+                 ampGuess=7.96e-3):
         """
         Set up a starry model
         dataPath: str
@@ -106,6 +107,7 @@ class starry_basemodel():
         self.inputLonLat = inputLonLat
 
         self.vminmaxDef = vminmaxDef
+        self.ampGuess = ampGuess
     
     def get_data(self,path):
         """ Gather the data
@@ -156,11 +158,11 @@ class starry_basemodel():
             if self.amp_type == 'variable':
                 if (self.systematics != 'Flat') & (self.use_gp == False):
                     ## special starting point for fitting the baseline trend with an astrophysical-only model
-                    b_map.amp = pm.Normal("amp",mu=8e-3,sd=3e-3,testval=7.96e-3)
+                    b_map.amp = pm.Normal("amp",mu=8e-3,sd=3e-3,testval=self.ampGuess)
                 elif self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
-                    b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3)
+                    b_map.amp = pm.Normal("amp", mu=1.7e-3, sd=0.5e-3,testval=self.ampGuess)
                 else:
-                    b_map.amp = pm.Normal("amp", mu=1.0e-3, sd=0.2e-3)
+                    b_map.amp = pm.Normal("amp", mu=1.0e-3, sd=0.2e-3,testval=self.ampGuess)
                 
             elif 'fixedAt' in self.amp_type:
                 b_map.amp = float(self.amp_type.split("fixedAt")[1])
