@@ -149,7 +149,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         inputLonLat=[52.447,1.3631]
     else:
         hotspotGuess_param = {}
-        inputLonLat=[59.573,47.988]
+        inputLonLat=[58.05,45.33]
     
     sb_list = []
     for ind,sys_type in enumerate(systematics):
