@@ -919,19 +919,19 @@ class starry_basemodel():
                                              projection=projection)
         
         for ind,oneMap in enumerate(['Mean','Error','Residual']):
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(5,3.5))
             
             
             if oneMap == 'Mean':
                 outName = 'mean_{}.pdf'.format(self.descrip)
-                colorbarLabel = 'I$_p$ (ppt)'
+                colorbarLabel = r'I ($10^{-3}~ \mathrm{I}_*$)'
                 keyName = 'meanMap'
                 vmin, vmax = self.vminmaxDef
                 multiplier = 1e3
                 cmap = 'plasma'
             elif oneMap == 'Error':
                 outName = 'error_{}.pdf'.format(self.descrip)
-                colorbarLabel = '$\sigma_I$ (ppt)'
+                colorbarLabel = r'I ($10^{-3}~ \mathrm{I}_*$)'
                 keyName = 'stdMap'
                 
                 multiplier = 1e3
