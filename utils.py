@@ -40,6 +40,7 @@ class starry_basemodel():
                  hotspotGuess_param={},
                  inputLonLat=[None,None],
                  vminmaxDef=[None,None],
+                 cores=2,chains=2,
                  ampGuess=7.96e-3):
         """
         Set up a starry model
@@ -74,6 +75,10 @@ class starry_basemodel():
                  or else hotspotGuess_param = {} will use defaults
         vminmaxDef: list of 2 floats or [None,None]
             The default value minimum and maximum for the mean map plot
+        cores: int
+            How many computer cores to use with the fits
+        chains: int
+            How many sampling chains to use?
         """
         
         
@@ -109,6 +114,9 @@ class starry_basemodel():
 
         self.vminmaxDef = vminmaxDef
         self.ampGuess = ampGuess
+
+        self.cores = cores
+        self.chains = chains
     
     def get_data(self,path):
         """ Gather the data
@@ -506,8 +514,8 @@ class starry_basemodel():
                     tune=3000, 
                     draws=3000, 
                     start=self.mxap_soln, 
-                    cores=2, 
-                    chains=2, 
+                    cores=self.cores, 
+                    chains=self.chains, 
                     init="adapt_full", 
                     target_accept=0.9)
             pm.save_trace(trace, directory =outDir, overwrite = True)
