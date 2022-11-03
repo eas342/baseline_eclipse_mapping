@@ -100,6 +100,7 @@ class starry_basemodel():
         
         self.widerSphHarmonicPriors = widerSphHarmonicPriors
         
+        self.find_physOrb_centers()
         if self.map_prior == 'physicalVisible':
             self.calc_visible_lon()
         
@@ -126,12 +127,35 @@ class starry_basemodel():
         self.yerr = np.ascontiguousarray(self.dat['Flux err'])
         self.meta = self.dat.meta
     
+    def find_physOrb_centers(self):
+        """
+        Find the center values for physical and orbital parameters
+        This will be used in plotting when orbital parameters
+        are free and a prior is provided
+        """
+        physOrbParams = ['M_star','R_star','rp','Period',
+                             't0','inc']
+        physOrbCen = {}
+        for oneParam in physOrbParams:
+            paramVal = self.meta[oneParam]
+            if type(paramVal) == float:
+                paramLen = 1
+            else:
+                paramLen = len(paramVal)
+            if paramLen == 1:
+                physOrbCen[oneParam] = self.meta[oneParam]
+            elif paramLen == 2:
+                physOrbCen[oneParam] = paramVal[0]
+            else:
+                raise Exception("Unexpected length {} for {}".format(paramLen,oneParam))
+        self.physOrbCen = physOrbCen
+
     def calc_visible_lon(self):
         """
         Calculate the visible longitudes - we only havere information and should place priors here
         """
-        self.midEclipse = self.meta['t0'] + self.meta['Period'] * 0.5
-        eclipsePhase = np.mod((self.x - self.midEclipse)/self.meta['Period'],1.0)
+        self.midEclipse = self.physOrbCen['t0'] + self.physOrbCen['Period'] * 0.5
+        eclipsePhase = np.mod((self.x - self.midEclipse)/self.physOrbCen['Period'],1.0)
         ptsHigh = eclipsePhase > 0.6
         eclipsePhase[ptsHigh] = eclipsePhase[ptsHigh] - 1.0
         self.minLon = np.min(eclipsePhase) * 360. - 90.
@@ -149,9 +173,31 @@ class starry_basemodel():
         
         with pm.Model() as model:
             
+            ## If physical+orbital parameters are fixed, keep them fixed
+            ## If they are variable, assign Normal prior
+            physOrbParams = ['M_star','R_star','rp','Period',
+                             't0','inc']
+            physOrbDict = {}
+            for oneParam in physOrbParams:
+                paramVal = self.meta[oneParam]
+                if type(paramVal) == float:
+                    paramLen = 1
+                else:
+                    paramLen = len(paramVal)
+                
+                if paramLen == 1:
+                    physOrbDict[oneParam] = self.meta[oneParam]
+                elif paramLen == 2:
+                    physOrbDict[oneParam] = pm.Normal(oneParam,mu=paramVal[0],sd=paramVal[1],
+                                                      testval=paramVal[0])
+                    # oneVar = pm.Normal(oneParam,mu=paramVal[0],sd=paramVal[1],
+                    #                    testval=paramVal[0])
+                else:
+                    raise Exception("Unexpected length {} for {}".format(paramLen,oneParam))
+
             A_map = starry.Map(ydeg=0,udeg=2,amp=1.0)
-            A = starry.Primary(A_map,m=self.meta['M_star'],
-                               r=self.meta['R_star'],
+            A = starry.Primary(A_map,m=physOrbDict['M_star'],
+                               r=physOrbDict['R_star'],
                                prot=self.meta['prot_star'])
             
             b_map = starry.Map(ydeg=self.degree)
@@ -255,11 +301,11 @@ class starry_basemodel():
             # b_map.set_prior(mu=sec_mu, L=sec_L)
             b = starry.kepler.Secondary(b_map,
                                         m=M_planet,
-                                        r=self.meta['rp'],
-                                        prot=self.meta['Period'],
-                                        porb=self.meta['Period'],
-                                        t0=self.meta['t0'],
-                                        inc=self.meta['inc'])
+                                        r=physOrbDict['rp'],
+                                        prot=physOrbDict['Period'],
+                                        porb=physOrbDict['Period'],
+                                        t0=physOrbDict['t0'],
+                                        inc=physOrbDict['inc'])
             b.theta0 = 180.0
             sys = starry.System(A,b)
             
@@ -794,7 +840,7 @@ class starry_basemodel():
         
         np.random.seed(0)
         
-        b_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.meta['inc'])
+        b_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.physOrbCen['inc'])
         
         if calcStats == True:
             map_samples = np.zeros([n_draws,res,res])
@@ -870,7 +916,7 @@ class starry_basemodel():
             
             ## find the residuals
             if (('Amplitude' in self.dat.meta) & ('y_input' in self.dat.meta)):
-                truth_map = starry.Map(ydeg=forward_model_degree,udeg=0,inc=self.meta['inc'])
+                truth_map = starry.Map(ydeg=forward_model_degree,udeg=0,inc=self.physOrbCen['inc'])
                 truth_map.amp = self.dat.meta['Amplitude']
                 truth_map[1:,:] = self.dat.meta['y_input']
                 truth_map_calc = b_map.render(res=res,projection=projection).eval()
