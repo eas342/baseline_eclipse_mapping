@@ -134,6 +134,10 @@ class starry_basemodel():
         
         self.yerr = np.ascontiguousarray(self.dat['Flux err'])
         self.meta = self.dat.meta
+        if 'ecc' not in self.meta:
+            self.meta['ecc'] = 0.0
+        if 'omega' not in self.meta:
+            self.meta['omega'] = 90.0
     
     def find_physOrb_centers(self):
         """
@@ -184,7 +188,7 @@ class starry_basemodel():
             ## If physical+orbital parameters are fixed, keep them fixed
             ## If they are variable, assign Normal prior
             physOrbParams = ['M_star','R_star','rp','Period',
-                             't0','inc']
+                             't0','inc','ecc','omega']
             physOrbDict = {}
             for oneParam in physOrbParams:
                 paramVal = self.meta[oneParam]
@@ -313,7 +317,9 @@ class starry_basemodel():
                                         prot=physOrbDict['Period'],
                                         porb=physOrbDict['Period'],
                                         t0=physOrbDict['t0'],
-                                        inc=physOrbDict['inc'])
+                                        inc=physOrbDict['inc'],
+                                        ecc=physOrbDict['ecc'],
+                                        w=physOrbDict['omega'])
             b.theta0 = 180.0
             sys = starry.System(A,b)
             
