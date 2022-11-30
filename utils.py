@@ -18,6 +18,7 @@ import theano.tensor as tt
 import hotspot_fitter
 import arviz
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib import gridspec
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -1358,7 +1359,7 @@ def plot_sph_harm_lc(onePlot=True):
         fig.savefig(outPath,bbox_inches='tight')
         plt.close(fig)
         
-def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
+def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=True,projection='rect'):
     """
     Plot the maps for all spherical harmonics
     
@@ -1384,10 +1385,25 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
         nrows = degree + 1
         ncols = 2 * degree + 1
         midX = degree
-        fig, axArr = plt.subplots(nrows,ncols,figsize=(14,8))
         
+        if projection == 'rect':
+            hspace = -0.6
+            wspace = 0.05
+            figsize=(13, 8)
+        else:
+            hspace = None
+            wspace = None
+            figsize=(14, 8)
+        fig = plt.figure(figsize=figsize)
+        gs = fig.add_gridspec(nrows, ncols,hspace=hspace,wspace=wspace)
+
+        #fig, axArr = plt.subplots(nrows,ncols,figsize=(14,8))
+        axArr = gs.subplots()
         for row in range(nrows):
             for col in range(ncols):
+                #ax= plt.subplot(gs[row,col])
+                #axArr[row][col] = ax
+                #ax.axis('off')
                 axArr[row,col].axis('off')
     
         #plt.subplots_adjust(hspace=0.55)
@@ -1408,7 +1424,8 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
             ell, em = ells[ind - 1], ems[ind - 1]
             if onePlot == True:
                 
-                ax = axArr[ell,em + midX]
+                #ax = axArr[ell,em + midX]
+                ax = axArr[ell][em + midX]
                 ax.axis('on')
                 if (em == 0) and (ell == 0):
                     ## Show Y axis just for top plot
@@ -1434,7 +1451,16 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
                 ## and the amplitude term will be negligible
                 b_map[ell,em] = 1e7
             
-            b_map.show(projection='ortho',ax=ax)
+
+            
+            b_map.show(projection=projection,ax=ax)
+            
+            if projection == 'rect':
+                freq = 3
+                xticks = ax.get_xticks()
+
+                ax.set_xticks(xticks[::freq],minor=False)
+                ax.set_xticklabels(xticks[::freq], rotation = 50,ha='right')
             
             ax.set_title(titles[ind])
         
@@ -1455,10 +1481,15 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
         if highlightm1 == True:
             extra_descrip = '_highlightm1'
             
-            
+            if projection == 'rect':
+                highlightW, highlightH = 0.112, 0.45
+                highlightCorner = (0.5685,0.2)
+            else:
+                highlightW, highlihgtH = 0.12, 0.65
+                highlightCorner = (0.57,0.1)
             rect = plt.Rectangle(
                 # (lower-left corner), width, height
-                (0.57, 0.1), 0.12, 0.65, fill=False, color="k", lw=2, 
+                highlightCorner, highlightW, highlightH, fill=False, color="k", lw=2, 
                 zorder=100, transform=fig.transFigure, figure=fig
             )
             fig.patches.extend([rect])
@@ -1466,7 +1497,7 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=False):
         else:
             extra_descrip = ''
         
-        outName = 'all_sph_maps{}.pdf'.format(extra_descrip)
+        outName = 'all_sph_maps_{}{}.pdf'.format(projection,extra_descrip)
         outPath = os.path.join('plots','sph_harm_maps_comb',outName)
         print("Saving plot to {}".format(outPath))
         fig.savefig(outPath,bbox_inches='tight')
