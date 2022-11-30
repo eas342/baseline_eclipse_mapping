@@ -31,6 +31,10 @@ forward_model_degree = 3
 
 res_for_physical_check = 100
 
+## Physical and Orbital Parameters that can be fixed or variables
+physOrbParams = ['M_star','R_star','rp','Period',
+                    't0','inc','ecc','omega']
+
 class starry_basemodel():
     def __init__(self,dataPath='sim_data/sim_data_baseline.ecsv',
                  descrip='Orig_006_newrho_smallGP',
@@ -140,21 +144,37 @@ class starry_basemodel():
         if 'omega' not in self.meta:
             self.meta['omega'] = 90.0
     
+    def inspect_physOrb_params(self,paramVal):
+        """
+        Figure out if the supplied physical or orbital parameter
+        is fixed or a variable.
+
+        Parameters
+        ----------
+        paramVal: string name of parameter
+            The name of the physical or orbital parameter
+        
+        Returns
+        -------
+        paramLen, int
+            The length of the value. 1 is fixed, 2 is variable
+        """
+        if (type(paramVal) == float) | (type(paramVal) == int):
+            paramLen = 1
+        else:
+            paramLen = len(paramVal)
+        return paramLen
+
     def find_physOrb_centers(self):
         """
         Find the center values for physical and orbital parameters
         This will be used in plotting when orbital parameters
         are free and a prior is provided
         """
-        physOrbParams = ['M_star','R_star','rp','Period',
-                             't0','inc']
         physOrbCen = {}
         for oneParam in physOrbParams:
             paramVal = self.meta[oneParam]
-            if type(paramVal) == float:
-                paramLen = 1
-            else:
-                paramLen = len(paramVal)
+            paramLen = self.inspect_physOrb_params(paramVal)
             if paramLen == 1:
                 physOrbCen[oneParam] = self.meta[oneParam]
             elif paramLen == 2:
@@ -188,16 +208,12 @@ class starry_basemodel():
             
             ## If physical+orbital parameters are fixed, keep them fixed
             ## If they are variable, assign Normal prior
-            physOrbParams = ['M_star','R_star','rp','Period',
-                             't0','inc','ecc','omega']
+
             physOrbDict = {}
             for oneParam in physOrbParams:
                 paramVal = self.meta[oneParam]
-                if type(paramVal) == float:
-                    paramLen = 1
-                else:
-                    paramLen = len(paramVal)
-                
+                paramLen = self.inspect_physOrb_params(paramVal)
+
                 if paramLen == 1:
                     physOrbDict[oneParam] = self.meta[oneParam]
                 elif paramLen == 2:
