@@ -144,7 +144,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
     
     if lc_name == 'GCM01_HD189':
         hotspotGuess_param = {'xstart':40,'xend':95,
-                              'ystart':30,'yend':70,
+                              'ystart':10,'yend':90,
                               'guess_x':30,'guess_y':0}
         inputLonLat=[52.447,1.3631]
     else:
