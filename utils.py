@@ -458,7 +458,10 @@ class starry_basemodel():
         
         
         ax.plot(self.x,self.y,'.',label='data',color=dataColor)
-        ax.plot(self.x,f,label='GP model',color= "#FF7F51")
+        if self.use_gp == True:
+            ax.plot(self.x,f,label='GP model',color= "#FF7F51")
+        else:
+            ax.plot(self.x,f,label='Full model',color= "#FF7F51")
         ax.plot(self.x,f_astroph,label='Astrophysical Component',color="black")
         
         if point == 'posterior':
@@ -950,7 +953,7 @@ class starry_basemodel():
                 truth_map = starry.Map(ydeg=forward_model_degree,udeg=0,inc=self.physOrbCen['inc'])
                 truth_map.amp = self.dat.meta['Amplitude']
                 truth_map[1:,:] = self.dat.meta['y_input']
-                truth_map_calc = b_map.render(res=res,projection=projection).eval()
+                truth_map_calc = truth_map.render(res=res,projection=projection).eval()
                 resultDict['residMap'] = resultDict['meanMap'] - truth_map_calc
                 resultDict['residSigma'] = resultDict['residMap'] / resultDict['stdMap']
             
