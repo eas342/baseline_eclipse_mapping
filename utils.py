@@ -982,7 +982,8 @@ class starry_basemodel():
             fig.savefig(outName,bbox_inches='tight')
             plt.close(fig)
     
-    def plot_map_statistics(self,statDict=None,projection='rect'):
+    def plot_map_statistics(self,statDict=None,projection='rect',
+                            saveFitsFile=True):
         """
         Plot the maps for random draws or calculate stats on them
         
@@ -993,6 +994,8 @@ class starry_basemodel():
             re-running to plot if you already saved the dictionary
         projection: str
             The map projection to show ('ortho' or 'rect')
+        saveFitsFile: bool
+            Save a .fits file of the statistics
         """
         if statDict is None:
             statDict = self.get_random_draws(calcStats=True,n_draws=40,
@@ -1040,6 +1043,8 @@ class starry_basemodel():
                            vmin=vmin,vmax=vmax,cmap=cmap,
                            extent=extent)
             
+
+
             ## show fits to individual map draws
             londeg = statDict['lonfit_arr']
             latdeg = statDict['latfit_arr']
@@ -1091,7 +1096,15 @@ class starry_basemodel():
             outFull = os.path.join('plots','map_stats',outName)
             print("Saving map draws plot to {}".format(outFull))
             fig.savefig(outFull,bbox_inches='tight')
-            
+
+            if saveFitsFile == True:
+                outName_fits = outName.replace('.pdf','.fits')
+                outFull_fits = os.path.join('fit_data','map_stats',oneMap,outName_fits)
+                print("Saving {}".format(outFull_fits))
+                primHDU = fits.PrimaryHDU(statDict[keyName])
+                primHDU.writeto(outFull_fits,overwrite=True)
+    
+    
     def run_all(self,find_posterior=True,super_giant_corner=False):
         self.plot_lc(point='mxap')
         if find_posterior == True:
