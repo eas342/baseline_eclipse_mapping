@@ -46,7 +46,10 @@ class starry_basemodel():
                  inputLonLat=[None,None],
                  vminmaxDef=[None,None],
                  cores=2,chains=2,
-                 ampGuess=7.96e-3):
+                 ampGuess=7.96e-3,
+                 t_subtracted=False,
+                 ampPrior=None,
+                 nuts_init="adapt_full"):
         """
         Set up a starry model
         dataPath: str
@@ -64,6 +67,8 @@ class starry_basemodel():
             Use a Gaussian process to model systematics?                 
         degree: int
             The spherical harmonic degree
+        t_subtracted: bool
+            Subtract off a large value from time (useful when in JD)
         map_prior: str
             What priors are put on the plot?
             'physical' ensures physical (non-negative maps)
@@ -84,6 +89,13 @@ class starry_basemodel():
             How many computer cores to use with the fits
         chains: int
             How many sampling chains to use?
+        nuts_init: str
+            How to initialize the NUTS sampler
+        ampGuess: float
+            The guess value for the amplitude of the map
+        ampPrior: Tuple of floats or None
+            Prior on the amplitude of the map. If supplied, should be a tuple
+            with the mean of X[0] and standard deviation of X[1]
         """
         
         
@@ -103,6 +115,7 @@ class starry_basemodel():
         self.degree = degree
         
         self.use_gp = use_gp
+        self.t_subtracted = t_subtracted
         
         self.data_path = dataPath
         self.get_data(path=self.data_path)
@@ -119,9 +132,11 @@ class starry_basemodel():
 
         self.vminmaxDef = vminmaxDef
         self.ampGuess = ampGuess
+        self.ampPrior = ampPrior
 
         self.cores = cores
         self.chains = chains
+        self.nuts_init = nuts_init
     
     def get_data(self,path):
         """ Gather the data
@@ -143,6 +158,16 @@ class starry_basemodel():
             self.meta['ecc'] = 0.0
         if 'omega' not in self.meta:
             self.meta['omega'] = 90.0
+        if self.t_subtracted == True:
+            self.t_reference = np.round(np.median(self.x))
+            self.x = self.x - self.t_reference
+            lent0 = self.inspect_physOrb_params(self.meta['t0'])
+            if lent0 == 1:
+                self.meta['t0'] = self.meta['t0'] - self.t_reference
+            else:
+                self.meta['t0'][0] = self.meta['t0'][0] - self.t_reference
+        else:
+            self.t_reference = 0.0
     
     def inspect_physOrb_params(self,paramVal):
         """
@@ -159,7 +184,7 @@ class starry_basemodel():
         paramLen, int
             The length of the value. 1 is fixed, 2 is variable
         """
-        if (type(paramVal) == float) | (type(paramVal) == int):
+        if (type(paramVal) == float) | (type(paramVal) == int) | (type(paramVal) == np.float64):
             paramLen = 1
         else:
             paramLen = len(paramVal)
@@ -231,7 +256,10 @@ class starry_basemodel():
             
             b_map = starry.Map(ydeg=self.degree)
             if self.amp_type == 'variable':
-                if (self.systematics != 'Flat') & (self.use_gp == False):
+                if self.ampPrior is not None:
+                    b_map.amp = pm.Normal("amp",mu=self.ampPrior[0],sd=self.ampPrior[0],
+                                          testval=self.ampGuess)
+                elif (self.systematics != 'Flat') & (self.use_gp == False):
                     ## special starting point for fitting the baseline trend with an astrophysical-only model
                     b_map.amp = pm.Normal("amp",mu=8e-3,sd=3e-3,testval=self.ampGuess)
                 elif self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
@@ -542,7 +570,7 @@ class starry_basemodel():
                     start=self.mxap_soln, 
                     cores=self.cores, 
                     chains=self.chains, 
-                    init="adapt_full", 
+                    init=self.nuts_init, 
                     target_accept=0.9)
             pm.save_trace(trace, directory =outDir, overwrite = True)
         else:
