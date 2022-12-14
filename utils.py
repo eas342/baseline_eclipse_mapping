@@ -511,7 +511,10 @@ class starry_basemodel():
                              zorder=10)
             #ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1])
         
-        ax2.set_xlabel("Time (days)")
+        if self.t_subtracted == True:
+            ax2.set_xlabel("Time (days) - {:.0f}".format(self.t_reference))
+        else:
+            ax2.set_xlabel("Time (days)")
         ax2.set_ylabel("Resid (ppm)")
         ax.set_ylabel("Normalized Flux")
         fig.savefig('plots/lc_checks/lc_{}_{}.pdf'.format(self.descrip,point),
