@@ -137,6 +137,9 @@ class starry_basemodel():
         self.cores = cores
         self.chains = chains
         self.nuts_init = nuts_init
+
+        self.fast_render_prepared = False
+        self.fast_render_res = None
     
     def get_data(self,path):
         """ Gather the data
@@ -810,6 +813,10 @@ class starry_basemodel():
                 pass
             elif oneVariable == 'final_lc':
                 pass
+            elif oneVariable == 'sigma_gp_log__':
+                pass
+            elif oneVariable == 'rho_gp_log__':
+                pass
             elif oneVariable == 'sec_y':
                 for ind,oneVar in enumerate(self.mxap_soln[oneVariable]):
                     all_unique_variables.append('sec_y_{:03d}'.format(ind))
@@ -868,6 +875,59 @@ class starry_basemodel():
             fig, ax = plot_pixels(pixToPlot,lon_t,lat_t,title=titles[ind])
             fig.savefig(os.path.join('plots','pix_samp_stats',"{}_{}.pdf".format(self.descrip,titles[ind])))
     
+    def prepare_fast_render(self,res=100):
+        """
+        Pre-calculate the spherical harmonic maps so that a bunch 
+        more can be calculated quickly
+        """
+        print("Saving map components for this inclination")
+        self.fast_render_res = res
+        n_var = (self.degree+1)**2 - 1
+        if (self.fast_render_prepared == False):
+            mapComponents_rect = np.zeros([n_var,res,res])
+            mapComponents_orth = np.zeros([n_var,res,res])
+            
+            b_map = starry.Map(ydeg=self.degree,udeg=0,inc=self.physOrbCen['inc'])
+
+            b_map.amp=1.0
+            b_map[1:,:] = 0.0
+            zeroth_map_rect = b_map.render(res=res,projection='rect').eval()
+            
+            zeroth_map_orth = b_map.render(res=res,projection='ortho').eval()
+
+            for oneVar in np.arange(n_var):
+                amp = 1.0
+                pl_y = np.zeros(n_var)
+                pl_y[oneVar] = 1.0
+                b_map.amp = amp
+                b_map[1:,:] = pl_y
+                mapWithZeroth_rect = b_map.render(res=res,projection='rect').eval()
+                mapWithZoerth_orth = b_map.render(res=res,projection='ortho').eval()
+                mapComponents_rect[oneVar] = mapWithZeroth_rect - zeroth_map_rect
+                mapComponents_orth[oneVar] = mapWithZoerth_orth - zeroth_map_orth
+            self.zeroth_map_rect = zeroth_map_rect
+            self.mapComponents_rect = mapComponents_rect
+            self.zeroth_map_orth = zeroth_map_orth
+            self.mapComponents_orth = mapComponents_orth
+            self.fast_render_prepared = True
+
+    def fast_render(self,amp,pl_y,res=100,projection='rect'):
+        """
+        Evaluate the map from the pre-calculated components
+        """
+        if (self.fast_render_prepared == False) | (res != self.fast_render_res):
+            self.prepare_fast_render(res=res)
+        
+        if projection == 'rect':
+            mapComponents = self.mapComponents_rect
+            zeroth_map = self.zeroth_map_rect
+        else:
+            mapComponents = self.mapComponents_orth
+            zeroth_map = self.zeroth_map_orth
+
+        map_calc = amp * (np.dot(mapComponents.T,pl_y).T + zeroth_map)
+        return map_calc
+
     def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
                          res=100,projection='ortho'):
         """
@@ -939,18 +999,19 @@ class starry_basemodel():
             amp = trace['amp'][draw]
             pl_y = trace['sec_y'][draw]
             
-            b_map[1:, :] = pl_y
-            b_map.amp = amp
             
             if calcStats == True:
-                map_calc = b_map.render(res=res,projection=projection)
+                #map_calc = b_map.render(res=res,projection=projection)
+                map_calc = self.fast_render(amp,pl_y,
+                                            res=res,projection=projection)
                 
-                map_samples[counter] = map_calc.eval()
+                map_samples[counter] = map_calc
                 
                 if projection == 'rect':
                     eval2Drect = map_samples[counter]
                 else: 
-                    eval2Drect = b_map.render(res=res,projection='rect').eval()
+                    eval2Drect = self.fast_render(amp,pl_y,
+                                                  res=res,projection='rect')
                     map_samples_rect[counter] = eval2Drect
                 
                 hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect,
@@ -961,6 +1022,8 @@ class starry_basemodel():
                 latfit_arr[counter] = latfit
                 
             else:
+                b_map[1:, :] = pl_y
+                b_map.amp = amp
                 ax = axArr[counter]
                 b_map.show(theta=0.0,colorbar=False,ax=ax,grid=True,
                            projection=projection)
