@@ -49,6 +49,7 @@ class starry_basemodel():
                  ampGuess=7.96e-3,
                  t_subtracted=False,
                  ampPrior=None,
+                 fix_Y10=None,
                  nuts_init="adapt_full"):
         """
         Set up a starry model
@@ -75,6 +76,10 @@ class starry_basemodel():
             'uniformPixels' assumes all pixels are uniform (times amplitude) and therefore physical
             'non-physical' allows the spherical harmonics to be postive or negative
             'physicalVisible' ensures physical (non-negative maps over visible longitudes)
+        fix_Y10: None or float
+            Fix the Y10 term at a particular value. If None, it will allow Y10 float.
+            This actually puts a tiny Gaussian around the value because the code is not set up for a 
+            fixed Y10 term
         widerSphHarmonicPriors: bool
             Put wider priors on the spherical harmonic coefficients?
             As of 2022-06-02, when widerSphHarmoincPriors is True, it is 3.0, otherwise 0.5.
@@ -120,6 +125,7 @@ class starry_basemodel():
         self.data_path = dataPath
         self.get_data(path=self.data_path)
         self.map_prior = map_prior
+        self.fix_Y10 = fix_Y10
         
         self.widerSphHarmonicPriors = widerSphHarmonicPriors
         
@@ -286,6 +292,12 @@ class starry_basemodel():
             else:
                 sec_cov = 0.5**2 * np.eye(ncoeff)
             
+            if self.fix_Y10 is None:
+                pass
+            else:
+                sec_mu[1] = self.fix_Y10
+                sec_cov[1][1] = 1e-5
+
             ## special starting point for fitting the baseline trend with an astrophysical-only model
             if (self.systematics != 'Flat') & (self.use_gp == False):
                 if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
