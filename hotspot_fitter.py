@@ -12,7 +12,7 @@ class hotspot_fitter(object):
     
     def __init__(self,map2D,lon,lat,err2D=None,
                  xstart=50,xend=80,ystart=50,yend=99,
-                 guess_x=50,guess_y=40):
+                 guess_x=50,guess_y=40,res=100):
         """
         Class for fitting a hotspot
 
@@ -38,17 +38,30 @@ class hotspot_fitter(object):
             Guess longitude (in degrees)
         guess_y: float
             Guess latitude (in degrees)
+        res: int
+            The pixel resolution of the model (how many indices across)
         """
         self.p_init = models.Gaussian2D(amplitude=0.7,
                                         x_mean=guess_x,
                                         y_mean=guess_y,
                                         x_stddev=30,y_stddev=30)
         
+        if res == 100:
+            xstart_use = xstart
+            xend_use = xend
+            ystart_use = ystart
+            yend_use = yend
+        else:
+            xstart_use = int(xstart * res/100.)
+            xend_use = int(xend * res/100.)
+            ystart_use = int(ystart * res/100.)
+            yend_use = int(yend * res/100.)
+        
         self.p_init.amplitude.min = 0 ## don't fit a cold spot
-        self.p_init.x_mean.bounds = (lon[0,xstart],lon[0,xend])
-        self.p_init.y_mean.bounds = (lat[ystart,0],lat[yend,0])
-        self.p_init.x_stddev.bounds = (1,(lon[0,xend] - lon[0,xstart]) * 2)
-        self.p_init.y_stddev.bounds = (1,(lat[yend,0] - lat[ystart,0]) * 2)
+        self.p_init.x_mean.bounds = (lon[0,xstart_use],lon[0,xend_use])
+        self.p_init.y_mean.bounds = (lat[ystart_use,0],lat[yend_use,0])
+        self.p_init.x_stddev.bounds = (1,(lon[0,xend_use] - lon[0,xstart_use]) * 2)
+        self.p_init.y_stddev.bounds = (1,(lat[yend_use,0] - lat[ystart_use,0]) * 2)
         
         self.fit_p = fitting.LevMarLSQFitter()
         
