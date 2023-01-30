@@ -314,3 +314,19 @@ def posterior_ratios():
         outPath = os.path.join('fit_data','posterior_stats',outName)
         
         ratio_table.write(outPath,overwrite=True)
+
+def kelt9sim():
+    hotspotGuess_param = {'xstart':40,'xend':60,
+                            'ystart':40,'yend':60,
+                            'guess_x':0,'guess_y':0}
+
+
+    dataPath='sim_data/sim_data_kelt9.ecsv'
+    descrip = 'flat_kelt9sim'
+    sb = utils.starry_basemodel(dataPath=dataPath,
+                                descrip=descrip,
+                                map_type='variable',amp_type='variable',
+                                systematics='Flat',degree=2,
+                                hotspotGuess_param=hotspotGuess_param,
+                                map_prior='physicalVisible',use_gp=False)
+    return sb
