@@ -14,8 +14,18 @@ def set_up_sb_obj(map_type='variable',use_gp=True,
                               'guess_x':30,'guess_y':0}
     ampPrior = (1.5e-3,0.4e-3)
 
+    fix_Y10 = None
+
     if lc == 'F444W':
-        dataPath='lc_hd189_wPCA_v008_trunc_refpix_A10orb_1min_cad_F444W.ecsv'
+        dataPath = 'real_data/lc_hd189_wPCA_v009_refpix_FPAH_A10orb_1min_cad_F444W.ecsv'
+        ampGuess=1.8e-3
+        descrip = 'PCAc9refpix_hd189F444WreaLC_fixY10'
+        hotspotGuess_param = broadHotspotGuess_param
+        cores=2
+        degree=1
+        fix_Y10 = 0.5
+    elif lc == 'F444W_old5':
+        dataPath='real_data/lc_hd189_wPCA_v008_trunc_refpix_A10orb_1min_cad_F444W.ecsv'
         ampGuess=1.8e-3
         descrip = 'PCAc8refpx_hd189F444WrealLC_trunc'
         hotspotGuess_param = broadHotspotGuess_param
@@ -81,33 +91,54 @@ def set_up_sb_obj(map_type='variable',use_gp=True,
         degree=2
     elif lc == 'PCAc_F322W2':
         #dataPath='real_data/lc_hd189_wPCA_v001_F322W2.ecsv'
-        dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F322W2.ecsv'
+        #dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F322W2.ecsv'
+        dataPath='real_data/lc_hd189_wPCA_v009_refpix_FPAH_A10orb_1min_cad_F322W2.ecsv'
         ampGuess=1.35e-3
         #descrip = 'hd189_wPCA01_F322W2real'
-        descrip = 'hd189_wPCA02_F322W2real'
+        #descrip = 'hd189_wPCA02_F322W2real'
+        descrip = 'hd189_wPCA09_F322W2real'
         hotspotGuess_param = broadHotspotGuess_param
+        fix_Y10 = 0.735 ## 1- min/max Spitzer 3.6 um flux
         cores=2
-        degree=2
+        degree=1
     elif lc == 'PCAc_F444W_inCO2':
         #dataPath='real_data/lc_hd189_wPCA_v001_F444W_inCO2.ecsv'
-        dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F444W_inCO2.ecsv'
+        #dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F444W_inCO2.ecsv'
+        dataPath='real_data/lc_hd189_wPCA_v009_refpix_FPAH_A10orb_1min_cad_F444W_inCO2.ecsv'
         ampGuess=1.4e-3
         ampPrior
         #descrip = 'hd189_wPCA0_F444Wreal_inCO2'
-        descrip = 'hd189_wPCA02_F444Wreal_inCO2'
+        #descrip = 'hd189_wPCA02_F444Wreal_inCO2'
+        descrip = 'hd189_wPCA09_F444Wreal_inCO2'
         hotspotGuess_param = broadHotspotGuess_param
+        fix_Y10 = 0.379 ## 1 - min/max Spitzer at 4.5 um, but only approx for in CO2
         cores=2
-        degree=2
+        degree=1
     elif lc == 'PCAc_F444W_outCO2':
         #dataPath='real_data/lc_hd189_wPCA_v001_F444W_outCO2.ecsv'
-        dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F444W_outCO2.ecsv'
+        #dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F444W_outCO2.ecsv'
+        dataPath='real_data/lc_hd189_wPCA_v009_refpix_FPAH_A10orb_1min_cad_F444W_outCO2.ecsv'
         ampGuess=1.6e-3
         #ampGuess=1.1e-3 ## to make sure it optimizes
         #descrip = 'hd189_wPCA01_F444Wreal_outCO2'
-        descrip = 'hd189_wPCA02_F444Wreal_outCO2'
+        descrip = 'hd189_wPCA09_F444Wreal_outCO2'
         hotspotGuess_param = broadHotspotGuess_param
+        fix_Y10 = 0.379  ## 1 - min/max Spitzer at 4.5 um, but only approx for in CO2
         cores=2
-        degree=2
+        degree=1
+    # elif lc == 'PCAc_F444W_outCO2':
+    #     #dataPath='real_data/lc_hd189_wPCA_v001_F444W_outCO2.ecsv'
+    #     #dataPath='real_data/lc_hd189_wPCA_v002_agol2010orb_F444W_outCO2.ecsv'
+    #     dataPath='real_data/lc_hd189_wPCA_v009_refpix_FPAH_A10orb_1min_cad_F444W_outCO2.ecsv'
+    #     ampGuess=1.6e-3
+    #     #ampGuess=1.1e-3 ## to make sure it optimizes
+    #     #descrip = 'hd189_wPCA01_F444Wreal_outCO2'
+    #     descrip = 'hd189_wPCA09_F444Wreal_outCO2'
+    #     hotspotGuess_param = broadHotspotGuess_param
+    #     fix_Y10 = 0.379  ## 1 - min/max Spitzer at 4.5 um, but only approx for in CO2
+    #     cores=2
+    #     degree=1
+ 
     else:
         raise Exception("Unrecognized lc {}".format(lc))
     
@@ -135,7 +166,8 @@ def set_up_sb_obj(map_type='variable',use_gp=True,
                                 ampPrior=ampPrior,
                                 cores=cores,
                                 nuts_init='auto',
-                                t_subtracted=True)
+                                t_subtracted=True,
+                                fix_Y10=fix_Y10)
     return sb
 
 def run_pca_round02(use_gp=True,overrideDegree=None,
@@ -144,9 +176,15 @@ def run_pca_round02(use_gp=True,overrideDegree=None,
     sbList = []
     for oneLCName in lcList:
         sbr = set_up_sb_obj(lc=oneLCName,use_gp=use_gp,overrideDegree=overrideDegree)
-        sbr.run_all()
+        sbr.run_all(super_giant_corner=True)
         sbList.append(sbr)
+        statDict2 = sbr.get_random_draws(calcStats=True,n_draws=40,projection='ortho',
+                                         res=1024,save_hotspot_stats=False)
+        sbr.plot_map_statistics(statDict=statDict2,projection='ortho',saveFitsFile=True)
+    
     utils.compare_histos(sbList[0],sbList[1],dataDescrips=['Out of CO2','In CO2'])
+    utils.compare_histos(sbList[0],sbList[2],dataDescrips=['Out of CO2 F444W','F322W2'])
+    
 
 def run_pca_round02_simplest():
     run_pca_round02(use_gp=False,overrideDegree=1)
