@@ -310,7 +310,7 @@ class starry_basemodel():
                     sec_testval[5] = 0.320690373
                     sec_testval[6] = 0.231961818
                     sec_testval[7] = 0.072216754
-                elif self.data_path == 'sim_data/sim_data_baseline.ecsv':
+                elif (self.data_path == 'sim_data/sim_data_baseline.ecsv') & (self.degree == 3):
                     sec_testval = np.ones(ncoeff) * 0.05
                     #b_map.amp = 0.001713124
                     sec_testval[0]  =  0.022510962
@@ -412,14 +412,17 @@ class starry_basemodel():
             resid = self.y[self.mask] - lc_eval
             
             ## estimate the standard deviation
-            sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(np.median(self.yerr)), sigma=0.5)
+            sigma_lc_guess = np.median(self.yerr)
+            sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(sigma_lc_guess), sigma=0.5)
             
             ## estimate GP error as std
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
             if self.use_gp == True:
-                sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(1e-1), sigma=0.5,testval=0.5)
-                rho_gp = pm.Lognormal("rho_gp", mu=np.log(2.5), sigma=0.5,testval=80.)
+                sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(sigma_lc_guess), sigma=0.5,
+                                        testval=sigma_lc_guess * 0.05)
+                rho_gp_guess = (np.max(self.x) - np.min(self.x))
+                rho_gp = pm.Lognormal("rho_gp", mu=np.log(rho_gp_guess), sigma=0.5,testval=rho_gp_guess)
                 #tau_gp = pm.Lognormal("tau_gp",mu=np.log(5e-2), sigma=0.5)
                 #kernel = terms.SHOTerm(sigma=sigma_gp, rho=rho_gp, tau=tau_gp)
             
@@ -558,9 +561,11 @@ class starry_basemodel():
                 optArgs = {'method':'Nelder-Mead','maxiter':9999}
                 soln1 = pmx.optimize(vars=[self.model.amp])
                 if self.use_gp == True:
+                    if self.map_type == 'variable':
+                        round2var = [self.model.sec_y,self.model.amp]
+                        soln1 = pmx.optimize(start=soln1,vars=round2var)
                     gp_vars = [self.model.sigma_gp,
                                self.model.rho_gp]
-                    
                     soln1 = pmx.optimize(start=soln1,vars=gp_vars)
                 self.mxap_soln =pmx.optimize(start=soln1)
             
@@ -927,7 +932,10 @@ class starry_basemodel():
         """
         Evaluate the map from the pre-calculated components
         """
-        if (self.fast_render_prepared == False) | (res != self.fast_render_res):
+        if (res != self.fast_render_res):
+            self.fast_render_prepared = False ## count it as not prepared
+        
+        if (self.fast_render_prepared == False):
             self.prepare_fast_render(res=res)
         
         if projection == 'rect':
@@ -941,7 +949,8 @@ class starry_basemodel():
         return map_calc
 
     def get_random_draws(self,trace=None,n_draws=8,calcStats=False,
-                         res=100,projection='ortho'):
+                         res=100,projection='ortho',
+                         save_hotspot_stats=True):
         """
         Plot the maps for random draws or calculate stats on them
         
@@ -965,6 +974,9 @@ class starry_basemodel():
         projection: str
             Projection of the grid (e.g. 'ortho' or 'rect')
         
+        save_hotspot_stats: bool
+            Save the hotspot fit statistics? Useful to turn off for high resolution
+
         Outputs
         -------
             resultDict: dict
@@ -1026,12 +1038,14 @@ class starry_basemodel():
                                                   res=res,projection='rect')
                     map_samples_rect[counter] = eval2Drect
                 
-                hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect,
-                                                   **self.hotspotGuess_param)
-                
-                lonfit, latfit = hf.return_peak()
-                lonfit_arr[counter] = lonfit
-                latfit_arr[counter] = latfit
+                if save_hotspot_stats == True:
+                    hf = hotspot_fitter.hotspot_fitter(eval2Drect,lon_rect,lat_rect,
+                                                    res=res,
+                                                    **self.hotspotGuess_param)
+                    
+                    lonfit, latfit = hf.return_peak()
+                    lonfit_arr[counter] = lonfit
+                    latfit_arr[counter] = latfit
                 
             else:
                 b_map[1:, :] = pl_y
@@ -1071,9 +1085,11 @@ class starry_basemodel():
                 resultDict['meanMap_rect'] = np.mean(map_samples_rect,axis=0)
                 resultDict['stdMap_rect'] = np.std(map_samples_rect,axis=0)
             
+
             hf = hotspot_fitter.hotspot_fitter(resultDict['meanMap_rect'],
                                                resultDict['lon_rect'],
                                                resultDict['lat_rect'],
+                                               res=res,
                                                **self.hotspotGuess_param)
             hf.fit_model()
             resultDict['meanMap_hspot_lon'] = hf.p_fit.x_mean.value
@@ -1142,6 +1158,7 @@ class starry_basemodel():
 
             if projection == 'ortho':
                 extent = [-1,1,-1,1]
+                outName = 'ortho_' + outName
             else:
                 extent = [-180,180,-90,90]
 
@@ -1154,7 +1171,7 @@ class starry_basemodel():
             ## show fits to individual map draws
             londeg = statDict['lonfit_arr']
             latdeg = statDict['latfit_arr']
-            if projection == 'ortho':
+            if (projection == 'ortho'):
                 x_proj, y_proj = hotspot_fitter.find_unit_circ_projection(londeg,latdeg)
             else:
                 x_proj, y_proj = londeg, latdeg
@@ -1163,7 +1180,7 @@ class starry_basemodel():
             
 
             ## show the original hotspot fit
-            if projection == 'ortho':
+            if (projection == 'ortho') & (self.systematics != 'Real'):
                 x_proj_t, y_proj_t = hotspot_fitter.find_unit_circ_projection(self.inputLonLat[0],
                                                                               self.inputLonLat[1])
             else:
@@ -1210,6 +1227,24 @@ class starry_basemodel():
                 primHDU = fits.PrimaryHDU(statDict[keyName])
                 primHDU.writeto(outFull_fits,overwrite=True)
     
+    def save_spot_stats(self,statDict=None):
+        """
+        Save the map statistics info
+        """
+        if statDict is None:
+            statDict = self.get_random_draws(calcStats=True,n_draws=300,
+                                             projection='rect')
+        t = Table()
+        t['lonfit_arr'] = statDict['lonfit_arr']
+        t['latfit_arr'] = statDict['latfit_arr']
+        copy_keys = ['mean_hspot_lon', 'std_htspot_lon', 'mean_hspot_lat', 'std_htspot_lat']
+        for oneKey in copy_keys:
+            t.meta[oneKey] = statDict[oneKey]
+        outName = "hspot_stat_{}.ecsv".format(self.descrip)
+        outPath = os.path.join('fit_data','hspot_stats',outName)
+        t.write(outPath,overwrite=True)
+
+        
     
     def run_all(self,find_posterior=True,super_giant_corner=False):
         self.plot_lc(point='mxap')
@@ -1221,6 +1256,7 @@ class starry_basemodel():
             self.get_random_draws()
             self.plot_map_statistics()
             self.calc_BIC()
+            self.save_spot_stats()
             
 
 def plot_pixels(pixels,lon_t,lat_t,title="",returnFig=True):
@@ -1422,7 +1458,7 @@ def check_lognorm_prior(variable='rho'):
     fig.savefig('plots/prior_checks/{}_check_001.pdf'.format(variable))
     
     
-def plot_sph_harm_lc(onePlot=True):
+def plot_sph_harm_lc(onePlot=True,degree=3):
     """
     Plot the lightcurves for all spherical harmonics
     
@@ -1434,7 +1470,7 @@ def plot_sph_harm_lc(onePlot=True):
     sb = starry_basemodel(dataPath='sim_data/sim_data_baseline.ecsv',
                           descrip='Orig_006_newrho_smallGP',
                           map_type='variable',amp_type='variable',
-                          systematics='Cubic',use_gp=False,degree=3)
+                          systematics='Cubic',use_gp=False,degree=degree)
     sb.find_design_matrix()
     
     
@@ -1525,9 +1561,14 @@ def plot_sph_harm_maps(degree=3,onePlot=True,highlightm1=True,projection='rect')
         midX = degree
         
         if projection == 'rect':
-            hspace = -0.6
-            wspace = 0.05
-            figsize=(13, 8)
+            if degree == 1:
+                hspace = 0.05
+                wspace = 0.05
+                figsize=(8, 4)
+            else:
+                hspace = -0.6
+                wspace = 0.05
+                figsize=(13, 8)
         else:
             hspace = None
             wspace = None
