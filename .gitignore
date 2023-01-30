@@ -13,6 +13,9 @@ plots/forward_model/forward_mod.tex
 fit_data/traces/*/*/*.json
 fit_data/posterior_stats/*.csv
 fit_data/lc_BIC/*.csv
+fit_data/hspot_stats/*.ecsv
+fit_data/map_stats/*/*.fits
+fit_data/map_stats/*/*.png
 *.pyc
 calculate_hd189_eclipse_depths.ipynb
 check_spherical_harmonic_amplitudes.ipynb
@@ -21,6 +24,7 @@ exploratory_noteboks/*.pdf
 map_with_spitzer.ipynb
 modifications_to_the_more_physical_priors_OLD/
 real_data/light_curve.sav
+real_data/*.ecsv
 sim_data/resids_from_mirage_sim.ecsv
 html_notebook_saves/
 plots/map_draws/ninimma_vs_m1/
