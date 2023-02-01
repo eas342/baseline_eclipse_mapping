@@ -58,7 +58,8 @@ def make_sb_obj_with_physical_visible(map_type='variable',lc_name='NC_HD189',
 def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                     map_prior='physical',degree=3,
                     use_gp_list = [False,True],
-                    widerSphHarmonicPriors=False):
+                    widerSphHarmonicPriors=False,
+                    cores=2):
     """
     Make a pair of starry basemodel objects in utils.
     Generally, used to compare data with and without baselines
@@ -79,7 +80,8 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         The spherical harmonic degree
     use_gp_list: 2 element list of booleans
         FOr the 
-    
+    cores: int
+        Number of CPU cores passed to utils.starry_basemodel
     """
     if degree == 3:
         degree_descrip = ''
@@ -139,6 +141,17 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         
         dataPath = 'sim_data/gcm01_sim_data_cubic_baseline_hd189_ncF444W.ecsv'
         vminmaxDef = [0.0,0.7]
+    if lc_name == 'NC_HD189variableOrbit':
+        systematics=['Flat','Quadratic']
+        systematics_abbrev = ['flat','quad']
+        
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_HD189NCvarOrbit{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
+        
+        dataPath='sim_data/sim_data_baseline_hd189_ncF444W_variable_orbParam.ecsv'
+        vminmaxDef = [0.0,1.1]
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
@@ -170,14 +183,16 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                                     widerSphHarmonicPriors=widerSphHarmonicPriors,
                                     hotspotGuess_param=hotspotGuess_param,
                                     inputLonLat=inputLonLat,
-                                    vminmaxDef=vminmaxDef)
+                                    vminmaxDef=vminmaxDef,
+                                    cores=cores)
         sb_list.append(sb)
     
     return sb_list
 
 def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                                   super_giant_corner=False,lc_name='NC_HD189',
-                                  map_prior='physical',degree=3):
+                                  map_prior='physical',degree=3,
+                                  cores=2):
     """
     Try fitting a lightcurve with a flat baseline vs curved
     
@@ -199,11 +214,15 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
     
     degree: int
         The spherical harmonic degree
+
+    cores: int
+        Number of CPU cores to pass to utils.starry_basemodel
     """
     
     
     sb_list = make_sb_objects(map_type=map_type,lc_name=lc_name,
-                              map_prior=map_prior,degree=degree)
+                              map_prior=map_prior,degree=degree,
+                              cores=cores)
     
     for sb in sb_list:
         sb.run_all(find_posterior=find_posterior,
@@ -218,10 +237,11 @@ def check_flat_vs_curved_baseline(map_type='variable',find_posterior=False,
                           extra_descrip='m_eq_1_')
     utils.compare_histos(sb_list[0],sb_list[1])
     
-def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3):
+def run_inference(lc_name='NC_HD189',map_prior='physical',degree=3,
+                  cores=2):
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
                                   lc_name=lc_name,map_prior=map_prior,
-                                  degree=degree)
+                                  degree=degree,cores=cores)
     
 
 def run_gcm01_inference():
@@ -330,3 +350,16 @@ def kelt9sim():
                                 hotspotGuess_param=hotspotGuess_param,
                                 map_prior='physicalVisible',use_gp=False)
     return sb
+
+
+def variable_orb():
+    """
+    Allow for a variable orbit
+    """
+    
+    #lc_name = 'sim_data/sim_data_baseline_hd189_ncF444W_variable_orbParam.ecsv'
+    lc_name = 'NC_HD189variableOrbit'
+    map_prior='physicalVisible'
+
+    run_inference(lc_name=lc_name,map_prior=map_prior,degree=2,
+                  cores=1)
