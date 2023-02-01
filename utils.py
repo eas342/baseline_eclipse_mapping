@@ -251,8 +251,14 @@ class starry_basemodel():
                 if paramLen == 1:
                     physOrbDict[oneParam] = self.meta[oneParam]
                 elif paramLen == 2:
-                    physOrbDict[oneParam] = pm.Normal(oneParam,mu=paramVal[0],sd=paramVal[1],
-                                                      testval=paramVal[0])
+                    if oneParam == 'ecc':
+                        physOrbDict[oneParam] = pm.TruncatedNormal(oneParam,mu=paramVal[0],
+                                                                   sd=paramVal[1],
+                                                                    testval=paramVal[0],
+                                                                    lower=0.0,upper=1.0)
+                    else:
+                        physOrbDict[oneParam] = pm.Normal(oneParam,mu=paramVal[0],sd=paramVal[1],
+                                                          testval=paramVal[0])
                     # oneVar = pm.Normal(oneParam,mu=paramVal[0],sd=paramVal[1],
                     #                    testval=paramVal[0])
                 else:
@@ -1414,7 +1420,8 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
         ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2,
                 density=True) ## Claret
         
-        ax.axvline(truths1[ind],color='blue',linestyle='dashed')
+        if truths1[ind] is not None:
+            ax.axvline(truths1[ind],color='blue',linestyle='dashed')
         
         ax.set_title(oneLabel)
     
