@@ -141,7 +141,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         
         dataPath = 'sim_data/gcm01_sim_data_cubic_baseline_hd189_ncF444W.ecsv'
         vminmaxDef = [0.0,0.7]
-    if lc_name == 'NC_HD189variableOrbit':
+    elif lc_name == 'NC_HD189variableOrbit':
         systematics=['Flat','Quadratic']
         systematics_abbrev = ['flat','quad']
         
@@ -363,3 +363,23 @@ def variable_orb():
 
     run_inference(lc_name=lc_name,map_prior=map_prior,degree=2,
                   cores=1)
+
+    compare_fixed_vs_variable_orb()
+
+def compare_fixed_vs_variable_orb():
+    lc_name_fixed = 'NC_HD189'
+    map_prior='physicalVisible'
+    cores=1
+    sb_list_fix = make_sb_objects(lc_name=lc_name_fixed,
+                                    map_prior=map_prior,degree=2,
+                                    cores=cores)
+
+    lc_name_var = 'NC_HD189variableOrbit'
+    
+    sb_list_var = make_sb_objects(lc_name=lc_name_var,
+                                    map_prior=map_prior,degree=2,
+                                    cores=cores)
+    
+    
+    utils.compare_histos(sb_list_fix[0],sb_list_var[0],
+                         dataDescrips=['Fixed Orb, Flat','Variable Orb, Flat'])
