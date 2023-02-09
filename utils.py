@@ -1400,7 +1400,7 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
         for col in range(ncols):
             axArr[row,col].axis('off')
     
-    plt.subplots_adjust(hspace=0.75)
+    plt.subplots_adjust(hspace=1.0)
     
     for ind,oneLabel in enumerate(labels1):
         ## figure out where to the put the plot
@@ -1415,15 +1415,33 @@ def compare_histos(sb1,sb2=None,sph_harmonics='all',
         ax.axis('on')
         ax.yaxis.set_visible(False)
         ## Color palette from https://coolors.co/4f000b-720026-ce4257-ff7f51-ff9b54
-        ax.hist(samples1[keys1[ind]],histtype='step',color='#FF9B54',linewidth=2,
+        if oneLabel == 'amp':
+            samples_multiplier = 100.
+        elif oneLabel == 'sigma_lc':
+            samples_multiplier = 1e6
+        else:
+            samples_multiplier = 1.0
+        
+        ax.hist(samples1[keys1[ind]] * samples_multiplier,
+                histtype='step',color='#FF9B54',linewidth=2,
                 density=True) ## sandy brown
-        ax.hist(samples2[keys1[ind]],histtype='step',color='#720026',linewidth=2,
+        ax.hist(samples2[keys1[ind]] * samples_multiplier,
+                histtype='step',color='#720026',linewidth=2,
                 density=True) ## Claret
         
         if truths1[ind] is not None:
-            ax.axvline(truths1[ind],color='blue',linestyle='dashed')
+            ax.axvline(truths1[ind] * samples_multiplier,
+                       color='blue',linestyle='dashed')
         
-        ax.set_title(oneLabel)
+        if oneLabel == 'amp':
+            showLabel = 'Amplitude (%)'
+        elif oneLabel == 'sigma_lc':
+            showLabel = '$\sigma_{LC}$ (ppm)'
+        else:
+            showLabel = oneLabel
+
+        ax.set_title(showLabel)
+        ax.tick_params(axis='x', rotation=45)
     
     axArr[0,0].text(0,0,dataDescrips[0],color='#FF9B54') ## sandy brown
     axArr[0,0].text(0,1,dataDescrips[1],color='#720026') ## Claret, dark brown
