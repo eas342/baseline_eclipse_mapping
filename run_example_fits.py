@@ -284,7 +284,8 @@ def run_all_inference_tests(map_prior='physicalVisible',degrees=[3,2]):
     
     for ind,lc_name in enumerate(['orig','NC_HD189']):
         run_inference(lc_name=lc_name,map_prior=map_prior,degree=degrees[ind])
-        
+    run_gcm01_inference()
+    
 
 def run_all_inference_px_sampling():
     run_all_inference_tests(map_prior='uniformPixels')
