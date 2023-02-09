@@ -152,7 +152,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W_variable_orbParam.ecsv'
         vminmaxDef = [0.0,1.1]
-    elif lc_name == 'NC_HD189GPforward':
+    elif lc_name == 'NC_HD189zeroImpact':
         systematics=['Flat','Quadratic']
         systematics_abbrev = ['flat','quad']
         
@@ -161,9 +161,9 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             thisDescrip = '{}_HD189NCzeroImpact{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
             descrips.append(thisDescrip)
         
-        dataPath='sim_data/sim_data_GP_baseline_hd189_ncF444W.ecsv'
+        dataPath='sim_data/sim_data_baseline_hd189_ncF444W_zero_impact_param.ecsv'
         vminmaxDef = [0.0,1.1]
-    elif lc_name == 'NC_HD189zeroImpact':
+    elif lc_name == 'NC_HD189GPforward':
         systematics=['Flat','GPbaseline']
         systematics_abbrev = ['flat','GPbase']
 
@@ -172,7 +172,7 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
             thisDescrip = '{}_HD189NCgpSim{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
             descrips.append(thisDescrip)
         
-        dataPath='sim_data/sim_data_baseline_hd189_ncF444W_zero_impact_param.ecsv'
+        dataPath='sim_data/sim_data_GP_baseline_hd189_ncF444W.ecsv'
         vminmaxDef = [0.0,1.1]
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
