@@ -777,7 +777,8 @@ class starry_basemodel():
             trace = self.trace
             
         varnames = self.select_plot_variables(sph_harmonics='all',
-                                              include_sigma_lc=True)
+                                              include_sigma_lc=True,
+                                              include_GP=self.use_gp)
         
         
         samples_all = pm.trace_to_dataframe(trace, varnames=varnames)
