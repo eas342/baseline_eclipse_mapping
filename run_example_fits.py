@@ -152,13 +152,24 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W_variable_orbParam.ecsv'
         vminmaxDef = [0.0,1.1]
-    elif lc_name == 'NC_HD189zeroImpact':
+    elif lc_name == 'NC_HD189GPforward':
         systematics=['Flat','Quadratic']
         systematics_abbrev = ['flat','quad']
         
         descrips = []
         for systematics_descrip in systematics_abbrev:
             thisDescrip = '{}_HD189NCzeroImpact{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
+        
+        dataPath='sim_data/sim_data_GP_baseline_hd189_ncF444W.ecsv'
+        vminmaxDef = [0.0,1.1]
+    elif lc_name == 'NC_HD189zeroImpact':
+        systematics=['Flat','GPbaseline']
+        systematics_abbrev = ['flat','GPbase']
+
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_HD189NCgpSim{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
             descrips.append(thisDescrip)
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W_zero_impact_param.ecsv'
@@ -412,3 +423,10 @@ def zero_impact_param_test():
     check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
                                 lc_name=lc_name,map_prior='physicalVisible',
                                 degree=2,cores=2)
+
+def GPforward_model():
+    lc_name ='NC_HD189GPforward'
+    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
+                                lc_name=lc_name,map_prior='physicalVisible',
+                                degree=2,cores=2)
+    
