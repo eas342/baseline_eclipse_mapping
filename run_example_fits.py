@@ -152,6 +152,17 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
         
         dataPath='sim_data/sim_data_baseline_hd189_ncF444W_variable_orbParam.ecsv'
         vminmaxDef = [0.0,1.1]
+    elif lc_name == 'NC_HD189zeroImpact':
+        systematics=['Flat','Quadratic']
+        systematics_abbrev = ['flat','quad']
+        
+        descrips = []
+        for systematics_descrip in systematics_abbrev:
+            thisDescrip = '{}_HD189NCzeroImpact{}PMass{}'.format(systematics_descrip,phys_descrip,degree_descrip)
+            descrips.append(thisDescrip)
+        
+        dataPath='sim_data/sim_data_baseline_hd189_ncF444W_zero_impact_param.ecsv'
+        vminmaxDef = [0.0,1.1]
     else:
         raise Exception("Unrecognized lightcurve name {}".format(lc_name))
     
@@ -160,6 +171,11 @@ def make_sb_objects(map_type='variable',lc_name='NC_HD189',
                               'ystart':0,'yend':99,
                               'guess_x':30,'guess_y':0}
         inputLonLat=[52.447,1.3631]
+    elif lc_name == 'NC_HD189zeroImpact':
+        hotspotGuess_param = {'xstart':45,'xend':85,
+                              'ystart':0,'yend':99,
+                              'guess_x':50,'guess_y':40}
+        inputLonLat=[58.05,45.33]
     else:
         hotspotGuess_param = {}
         inputLonLat=[58.05,45.33]
@@ -317,8 +333,10 @@ def posterior_ratios():
                          'Flat_001_no_gpphys_maptype_variable_amp_type_variableFlat_stats.csv']
     compare_HD189 = ['quad_HD189NCphysPMass_deg2_maptype_variable_amp_type_variableQuadratic_stats.csv',
                      'flat_no_gp_HD189NCphysPMass_deg2_maptype_variable_amp_type_variableFlat_stats.csv']
-    compare_pairs = [compare_idealized,compare_HD189]
-    compare_planet_names = ['Idealized','HD_189733_b']
+    compare_HD189zeroImpact = ['quad_HD189NCzeroImpactphysVisPMass_deg2_maptype_variable_amp_type_variableQuadratic_stats.csv',
+                                'flat_HD189NCzeroImpactphysVisPMass_deg2_no_gp_maptype_variable_amp_type_variableFlat_stats.csv']
+    compare_pairs = [compare_idealized,compare_HD189,compare_HD189zeroImpact]
+    compare_planet_names = ['Idealized','HD_189733_b','HD_189733b_b_w_zeroImpact']
     ratio_name = ['systematics over flat ratio']
     
     for onePlanet, onePair in zip(compare_planet_names,compare_pairs):
@@ -383,3 +401,13 @@ def compare_fixed_vs_variable_orb():
     
     utils.compare_histos(sb_list_fix[0],sb_list_var[0],
                          dataDescrips=['Fixed Orb, Flat','Variable Orb, Flat'])
+
+
+def zero_impact_param_test():
+    """
+    Test with zero impact parameter
+    """
+    lc_name='NC_HD189zeroImpact'
+    check_flat_vs_curved_baseline(map_type='variable',find_posterior=True,
+                                lc_name=lc_name,map_prior='physicalVisible',
+                                degree=2,cores=2)
