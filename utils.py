@@ -1277,10 +1277,12 @@ class starry_basemodel():
             if super_giant_corner == True:
                 self.plot_corner()
             self.plot_lc(point='posterior')
-            self.get_random_draws()
-            self.plot_map_statistics()
+            if self.map_type=='variable':
+                self.get_random_draws()
+                self.plot_map_statistics()
+                
+                self.save_spot_stats()
             self.calc_BIC()
-            self.save_spot_stats()
             
 
 def plot_pixels(pixels,lon_t,lat_t,title="",returnFig=True):
