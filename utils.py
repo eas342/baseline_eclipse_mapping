@@ -1064,6 +1064,13 @@ class starry_basemodel():
             
         
         if calcStats == True:
+            self.find_mxap()
+            mxap_map_calc = self.fast_render(self.mxap_soln['amp'],
+                                             self.mxap_soln['sec_y'],
+                                             res=res,projection=projection)
+                
+            resultDict['mxapMap'] = mxap_map_calc
+
             resultDict['meanMap'] = np.mean(map_samples,axis=0)
             resultDict['stdMap'] = np.std(map_samples,axis=0)
             resultDict['lon_rect'] = lon_rect
@@ -1130,11 +1137,18 @@ class starry_basemodel():
             statDict = self.get_random_draws(calcStats=True,n_draws=40,
                                              projection=projection)
         
-        for ind,oneMap in enumerate(['Mean','Error','Residual']):
+        for ind,oneMap in enumerate(['Max-A-Priori','Mean','Error','Residual']):
             fig, ax = plt.subplots(figsize=(5,3.5))
             
             
-            if oneMap == 'Mean':
+            if oneMap == 'Max-A-Priori':
+                outName = 'mxap_{}.pdf'.format(self.descrip)
+                colorbarLabel = r'I ($10^{-3}~ \mathrm{I}_*$)'
+                keyName = 'mxapMap'
+                vmin, vmax = self.vminmaxDef
+                multiplier = 1e3
+                cmap = 'plasma'                
+            elif oneMap == 'Mean':
                 outName = 'mean_{}.pdf'.format(self.descrip)
                 colorbarLabel = r'I ($10^{-3}~ \mathrm{I}_*$)'
                 keyName = 'meanMap'
@@ -1229,7 +1243,10 @@ class starry_basemodel():
 
             if saveFitsFile == True:
                 outName_fits = outName.replace('.pdf','.fits')
-                outFull_fits = os.path.join('fit_data','map_stats',oneMap,outName_fits)
+                outDir_fits = os.path.join('fit_data','map_stats',oneMap)
+                if os.path.exists(outDir_fits) == False:
+                    os.makedirs(outDir_fits)
+                outFull_fits = os.path.join(outDir_fits,outName_fits)
                 print("Saving {}".format(outFull_fits))
                 primHDU = fits.PrimaryHDU(statDict[keyName])
                 primHDU.writeto(outFull_fits,overwrite=True)
