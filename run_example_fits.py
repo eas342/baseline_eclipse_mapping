@@ -335,7 +335,25 @@ def plot_px_sampling(xdata=None,sb=None):
 
 if __name__ == "__main__":
     run_all_inference_tests()
+
+def get_posterior_comparables(postName):
+    """
+    Get the posterior info
+    Remove the GP parameters because they might not be comparable
+    """
+    full_dat = ascii.read(os.path.join('fit_data/posterior_stats/',postName))
+    keep_pts = np.ones_like(full_dat['Variable'],dtype=bool)
+    for ind,oneVar in enumerate(full_dat['Variable']):
+        if oneVar == 'sigma_gp':
+            keep_pts[ind] = False
+        elif oneVar == 'rho_gp':
+            keep_pts[ind] = False
+        else:
+            keep_pts[ind] = True
     
+    return full_dat[keep_pts]
+
+
 def posterior_ratios():
     """
     Calculate how much the posterior precisions compare (numerically) for models with/without baselines
@@ -347,13 +365,20 @@ def posterior_ratios():
                      'flat_no_gp_HD189NCphysPMass_deg2_maptype_variable_amp_type_variableFlat_stats.csv']
     compare_HD189zeroImpact = ['quad_HD189NCzeroImpactphysVisPMass_deg2_maptype_variable_amp_type_variableQuadratic_stats.csv',
                                 'flat_HD189NCzeroImpactphysVisPMass_deg2_no_gp_maptype_variable_amp_type_variableFlat_stats.csv']
-    compare_pairs = [compare_idealized,compare_HD189,compare_HD189zeroImpact]
-    compare_planet_names = ['Idealized','HD_189733_b','HD_189733b_b_w_zeroImpact']
+    compare_HD189GCM = ['cubic_GCM01_HD189NCphysPMass_deg2_maptype_variable_amp_type_variable_stats.csv',
+                        'flat_GCM01_HD189NCphysPMass_deg2_no_gp_maptype_variable_amp_type_variableFlat_stats.csv']
+    compare_HD189GP = ['GPbase_HD189NCgpSimphysVisPMass_deg2_maptype_variable_amp_type_variableGPbaseline_stats.csv',
+                       'flat_HD189NCgpSimphysVisPMass_deg2_no_gp_maptype_variable_amp_type_variableFlat_stats.csv']
+
+    compare_pairs = [compare_idealized,compare_HD189,compare_HD189zeroImpact,
+                    compare_HD189GCM,compare_HD189GP]
+    compare_planet_names = ['Idealized','HD_189733_b','HD_189733b_b_w_zeroImpact',
+                            'HD_189733b_GCM','HD_189733b_GPforward']
     ratio_name = ['systematics over flat ratio']
     
     for onePlanet, onePair in zip(compare_planet_names,compare_pairs):
-        dat1 = ascii.read(os.path.join('fit_data/posterior_stats/',onePair[0]))
-        dat2 = ascii.read(os.path.join('fit_data/posterior_stats/',onePair[1]))
+        dat1 = get_posterior_comparables(onePair[0])
+        dat2 = get_posterior_comparables(onePair[1])
         
         assert np.array_equal(dat1['Variable'],dat2['Variable'])
         
