@@ -193,3 +193,10 @@ def run_pca_round02_simplest():
 def set_up_f322w2():
     sb = set_up_sb_obj(lc='F322W2')
     return sb
+
+def test_if_nonuniform_is_significant():
+    for mapType in ['variable','fixed']:
+        sb = set_up_sb_obj(lc='PCAc_F444W_outCO2',map_type=mapType)
+        sb.run_all(super_giant_corner=True)
+    
+    
