@@ -576,7 +576,14 @@ class starry_basemodel():
                 self.mxap_soln =pmx.optimize(start=soln1)
             
             np.savez(self.mxap_path,**self.mxap_soln)
-        
+    
+    def update_mxap_after_sampling(self):
+        """
+        Sometimes the mxap solution isn't found in find_mxap
+        Here, start at the posterior median and see if it goes up
+        """
+        pass
+
     def read_mxap(self):
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
         self.mxap_soln = dict(npzfiles)
@@ -593,7 +600,7 @@ class starry_basemodel():
             os.mkdir(outDir)
             np.random.seed(42)
             with self.model: 
-                trace = pm.sample( 
+                trace = pmx.sample( 
                     tune=3000, 
                     draws=3000, 
                     start=self.mxap_soln, 
@@ -854,6 +861,8 @@ class starry_basemodel():
         """
         Calculate the Bayesian Information Criterion of the maximum a priori model
         """
+        if hasattr(self,'model') == False:
+            self.build_model()
         if hasattr(self,'mxap_soln') == False:
             self.find_mxap()
         self.read_mxap()
@@ -862,13 +871,15 @@ class starry_basemodel():
         nvar = len(self.get_unique_variables())
         npoints = len(self.y)
         BIC = chisq + nvar * np.log(npoints)
-        
+
+        logp = self.model.logp(self.mxap_soln)
         t = Table()
         t['chisq'] = [chisq]
         t['BIC'] = BIC
         t['nvar'] = nvar
         t['npoints'] = npoints
         t['red chisq'] = chisq / float(npoints - nvar)
+        t['logp pymc3'] = logp
         
         outName = os.path.join('fit_data','lc_BIC','{}_lc_BIC.csv'.format(self.descrip))
         print("Saving BIC statistics to {}".format(outName))
