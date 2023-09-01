@@ -199,4 +199,49 @@ def test_if_nonuniform_is_significant():
         sb = set_up_sb_obj(lc='PCAc_F444W_outCO2',map_type=mapType)
         sb.run_all(super_giant_corner=True)
     
-    
+
+def set_up_wasp69b(map_type='variable',use_gp=True,
+                   degree=1,map_prior='physicalVisible'):
+    dataPath = 'real_data/WASP69b_BB_MIRI_lc.ecsv'
+    if map_type == 'fixed':
+        bit0 = 'F' ## fixed
+    else:
+        bit0 = 'V' ## variable
+    if degree==1:
+        bit1 = 'Z' ## degree 1
+    else:
+        bit1 = '{}'.format(degree)
+
+    bit2 = 'Z' ## unused
+    bit3 = 'Z' ## unused
+    bit4 = 'Z' ## unused
+    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}'.format(bit0,
+                                               bit1,
+                                               bit2,
+                                               bit3,
+                                               bit4)
+    hotspotGuess_param = {'xstart':30,'xend':70,
+            'ystart':30,'yend':70,
+            'guess_x':0,'guess_y':0}
+    ampGuess = 1.1e-3
+    ampPrior = (1.1e-3,0.4)
+    cores=1
+
+    sb = utils.starry_basemodel(dataPath=dataPath,
+                                descrip=descrip,
+                                map_type=map_type,amp_type='variable',
+                                systematics='Real',use_gp=use_gp,
+                                degree=degree,
+                                map_prior=map_prior,
+                                hotspotGuess_param=hotspotGuess_param,
+                                ampGuess=ampGuess,
+                                ampPrior=ampPrior,
+                                cores=cores,
+                                nuts_init='auto',
+                                t_subtracted=True)
+    return sb
+
+def wasp69_test_if_nonuniform_is_significant():
+    for mapType in ['variable','fixed']:
+        sb = set_up_wasp69b(map_type=mapType)
+        sb.run_all(super_giant_corner=True)
