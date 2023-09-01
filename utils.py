@@ -582,7 +582,38 @@ class starry_basemodel():
         Sometimes the mxap solution isn't found in find_mxap
         Here, start at the posterior median and see if it goes up
         """
-        pass
+        ### Get variable names
+        if hasattr(self,'model') == False:
+            self.build_model()
+
+        if hasattr(self,'trace') == False:
+            self.find_posterior()
+        
+        with self.model:
+            pm_data = arviz.from_pymc3(self.trace)
+
+        
+        variables_modName = self.model.vars
+        variables_postName =  list(pm_data.posterior.data_vars)
+        start = {} ## starting guess dictionary
+        for oneVar in variables_postName:
+            #varName = oneVar.name
+            varName = oneVar
+            if ('_lc' not in varName) & ('lc_' not in varName):
+                trace2D = flatten_chains(pm_data.posterior[varName])
+                medVal = np.median(trace2D,axis=0)
+                start[varName] = medVal
+        with self.model:
+            mxap_soln_new =pmx.optimize(start=start)
+        ## only update if it's better than before
+        logp_old = self.model.logp(self.mxap_soln)
+        logp_new = self.model.logp(mxap_soln_new)
+        if logp_new > logp_old:
+            self.mxap_soln = mxap_soln_new
+            np.savez(self.mxap_path,**self.mxap_soln)
+        else:
+            print("Re-optimizing from posterior median didn't improve logp")
+        #return start
 
     def read_mxap(self):
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
@@ -1279,12 +1310,15 @@ class starry_basemodel():
         outPath = os.path.join('fit_data','hspot_stats',outName)
         t.write(outPath,overwrite=True)
 
+    
         
     
     def run_all(self,find_posterior=True,super_giant_corner=False):
         self.plot_lc(point='mxap')
         if find_posterior == True:
             self.find_posterior()
+            self.update_mxap_after_sampling()
+            self.plot_lc(point='mxap')
             if super_giant_corner == True:
                 self.plot_corner()
             self.plot_lc(point='posterior')
@@ -1319,17 +1353,27 @@ def flatten_chains(trace3D):
     
     Inputs
     ----------
-    trace3D: 3D or other numpy array
+    trace3D: 3D or 2D (for single variable) or other numpy array
         The 3D array with the Python shape nchains x npoints x nvariables
+        or else
+        2D array with Python shape nchains x npoints
     
     Outputs
     --------
     trac2D: 2D numpy array
         The 2D array with the Python shape n_allpoints x nvariables
     """
-    nchains, npoints, nvariables = trace3D.shape
+    thisShape = trace3D.shape
+    if len(thisShape) == 3:
+        nchains, npoints, nvariables = thisShape
+        
+        trace2D = np.reshape(np.array(trace3D),[nchains * npoints,nvariables])
+    elif len(thisShape) == 2:
+        nchains, npoints = thisShape
+        trace2D = np.reshape(np.array(trace3D),[nchains * npoints,1])
+    else:
+        raise Exception("Shape must be 2D or 3D")
     
-    trace2D = np.reshape(np.array(trace3D),[nchains * npoints,nvariables])
     return trace2D
     
 
