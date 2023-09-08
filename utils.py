@@ -1310,8 +1310,41 @@ class starry_basemodel():
         outPath = os.path.join('fit_data','hspot_stats',outName)
         t.write(outPath,overwrite=True)
 
-    
+    def calc_terminator_info(self):
+        """
+        Calculate the values at the terminators from the map
+        """
+        dummy_map = starry.Map(ydeg=self.degree,udeg=0)
+
+        postMaps = {}
+        for oneMap in ['Mean','Error']:
+            outDir_fits = os.path.join('fit_data','map_stats',oneMap)
+            outName_fits = '{}_{}.fits'.format(oneMap.lower(),self.descrip)
+            outFull_fits = os.path.join(outDir_fits,outName_fits)
+            postMaps[oneMap] = fits.getdata(outFull_fits)
         
+        res = np.shape(postMaps['Mean'])[0]
+        midWay = res // 2
+
+        lat, lon = dummy_map.get_latlon_grid(res=res,projection='rect')
+        lonInd1 = np.argmin(np.abs(lon.eval()[midWay,:] - (-90)))
+        lonInd2 = np.argmin(np.abs(lon.eval()[midWay,:] -  (90)))
+        
+        res = {}
+        westernT = np.mean(postMaps['Mean'][:,lonInd1])
+        westernT_err = np.mean(postMaps['Error'][:,lonInd1])
+        res['western fp/f*'] = westernT
+        res['western fp/f* err'] = westernT_err
+        
+        easternT = np.mean(postMaps['Mean'][:,lonInd2])
+        easternT_err = np.mean(postMaps['Error'][:,lonInd2])
+
+        res['eastern fp/f*'] = easternT
+        res['eastern fp/f* err'] = easternT_err
+        
+        return res
+
+
     
     def run_all(self,find_posterior=True,super_giant_corner=False):
         self.plot_lc(point='mxap')
