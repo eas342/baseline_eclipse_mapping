@@ -202,7 +202,8 @@ def test_if_nonuniform_is_significant():
 
 def set_up_wasp69b(map_type='variable',use_gp=True,
                    degree=1,map_prior='physicalVisible',
-                   ephem='IW'):
+                   ephem='kex',
+                   fix_Y1m1=None):
     if ephem == 'IW':
         ## Ivshina & Winn ephemeris, fixed
         dataPath = 'real_data/WASP69b_BB_MIRI_lc.ecsv'
@@ -222,7 +223,11 @@ def set_up_wasp69b(map_type='variable',use_gp=True,
     else:
         bit1 = '{}'.format(degree)
 
-    bit3 = 'Z' ## unused
+    if fix_Y1m1 is None:
+        bit3 = 'Z' ## free
+    else:
+        bit3 = 'F' ## fixed
+    
     bit4 = 'Z' ## unused
     descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}'.format(bit0,
                                                bit1,
@@ -247,7 +252,8 @@ def set_up_wasp69b(map_type='variable',use_gp=True,
                                 ampPrior=ampPrior,
                                 cores=cores,
                                 nuts_init='auto',
-                                t_subtracted=True)
+                                t_subtracted=True,
+                                fix_Y1m1=fix_Y1m1)
     return sb
 
 def wasp69_test_if_nonuniform_is_significant():
