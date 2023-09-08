@@ -50,6 +50,7 @@ class starry_basemodel():
                  t_subtracted=False,
                  ampPrior=None,
                  fix_Y10=None,
+                 fix_Y1m1=None,
                  nuts_init="adapt_full"):
         """
         Set up a starry model
@@ -78,6 +79,10 @@ class starry_basemodel():
             'physicalVisible' ensures physical (non-negative maps over visible longitudes)
         fix_Y10: None or float
             Fix the Y10 term at a particular value. If None, it will allow Y10 float.
+            This actually puts a tiny Gaussian around the value because the code is not set up for a 
+            fixed Y10 term
+        fix_Y1m1: None or float
+            Fix the Y{1,-1} term at a particular value. If None, it will allow Y{1,-1} float.
             This actually puts a tiny Gaussian around the value because the code is not set up for a 
             fixed Y10 term
         widerSphHarmonicPriors: bool
@@ -126,6 +131,7 @@ class starry_basemodel():
         self.get_data(path=self.data_path)
         self.map_prior = map_prior
         self.fix_Y10 = fix_Y10
+        self.fix_Y1m1 = fix_Y1m1
         
         self.widerSphHarmonicPriors = widerSphHarmonicPriors
         
@@ -303,6 +309,12 @@ class starry_basemodel():
             else:
                 sec_mu[1] = self.fix_Y10
                 sec_cov[1][1] = 1e-5
+
+            if self.fix_Y1m1 is None:
+                pass
+            else:
+                sec_mu[0] = self.fix_Y1m1
+                sec_cov[0][0] = 1e-5
 
             ## special starting point for fitting the baseline trend with an astrophysical-only model
             if (self.systematics != 'Flat') & (self.use_gp == False):
