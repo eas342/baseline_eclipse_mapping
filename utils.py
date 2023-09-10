@@ -40,6 +40,7 @@ class starry_basemodel():
                  descrip='Orig_006_newrho_smallGP',
                  map_type='variable',amp_type='variable',
                  systematics='Cubic',use_gp=True,
+                 poly_baseline=None,
                  degree=3,map_prior='physical',
                  widerSphHarmonicPriors=False,
                  hotspotGuess_param={},
@@ -66,7 +67,10 @@ class starry_basemodel():
         systematics: str
             What kind of systematics were modeled? This is just used in the description
         use_gp: bool
-            Use a Gaussian process to model systematics?                 
+            Use a Gaussian process to model systematics?
+        poly_baseline: None or int
+            If None, no polynomial baseline is used. If an integer >=1, do a polynomial baseline
+            1 is a linear baseline, 2 is quadratic, etc.
         degree: int
             The spherical harmonic degree
         t_subtracted: bool
@@ -125,6 +129,7 @@ class starry_basemodel():
         self.degree = degree
         
         self.use_gp = use_gp
+        self.poly_baseline = poly_baseline
         self.t_subtracted = t_subtracted
         
         self.data_path = dataPath
@@ -433,6 +438,26 @@ class starry_basemodel():
             sigma_lc_guess = np.median(self.yerr)
             sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(sigma_lc_guess), sigma=0.5)
             
+            if self.poly_baseline is not None:
+                if self.poly_baseline < 1:
+                    raise Exception("Poly baseline must be >= 1")
+                xmin, xmax = np.nanmin(self.x), np.nanmax(self.x)
+                xmed, x_halfwidth = np.nanmedian(self.x), 0.5 * (xmax - xmin)
+                self.x_norm = (self.x - xmed) / x_halfwidth
+                poly_ord = self.poly_baseline
+                poly_coeff = pm.Normal("poly_coeff",mu=0.0,testval=0.0,
+                                       sigma=0.1,
+                                       shape=(poly_ord))
+                
+                for poly_ind in np.arange(poly_ord):
+                    if poly_ind == 0:
+                        poly_eval = self.x_norm * poly_coeff[poly_ord - poly_ind - 1]
+                    else:
+                        poly_eval = (poly_eval + poly_coeff[poly_ord - poly_ind - 1]) * self.x_norm
+                lc_eval2 = lc_eval * (1.0 + poly_eval)
+            else:
+                lc_eval2 = lc_eval
+            
             ## estimate GP error as std
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
@@ -450,9 +475,9 @@ class starry_basemodel():
                 gp = GaussianProcess(kernel, t=self.x[self.mask], yerr=sigma_lc,quiet=True)
                 gp.marginal("gp", observed=resid)
                 #gp_pred = pm.Deterministic("gp_pred", gp.predict(resid))
-                final_lc = pm.Deterministic("final_lc",lc_eval + gp.predict(resid))
+                final_lc = pm.Deterministic("final_lc",lc_eval2 + gp.predict(resid))
             else:
-                final_lc = pm.Deterministic("final_lc",lc_eval)
+                final_lc = pm.Deterministic("final_lc",lc_eval2)
                 pm.Normal("obs", mu=final_lc, sd=sigma_lc, observed=self.y)
             
             # Save our initial guess w/ just the astrophysical component
@@ -578,6 +603,10 @@ class starry_basemodel():
             with self.model:
                 optArgs = {'method':'Nelder-Mead','maxiter':9999}
                 soln1 = pmx.optimize(vars=[self.model.amp])
+                if self.poly_baseline is None:
+                    pass
+                else:
+                    soln1 = pmx.optimize(start=soln1,vars=[self.model.poly_coeff])
                 if self.use_gp == True:
                     if self.map_type == 'variable':
                         round2var = [self.model.sec_y,self.model.amp]

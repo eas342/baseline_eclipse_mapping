@@ -200,10 +200,11 @@ def test_if_nonuniform_is_significant():
         sb.run_all(super_giant_corner=True)
     
 
-def set_up_wasp69b(map_type='variable',use_gp=True,
+def set_up_wasp69b(map_type='variable',
                    degree=1,map_prior='physicalVisible',
                    ephem='kex',
-                   fix_Y1m1=None):
+                   fix_Y1m1=None,
+                   poly_baseline=None):
     if ephem == 'IW':
         ## Ivshina & Winn ephemeris, fixed
         dataPath = 'real_data/WASP69b_BB_MIRI_lc.ecsv'
@@ -228,7 +229,13 @@ def set_up_wasp69b(map_type='variable',use_gp=True,
     else:
         bit3 = 'F' ## fixed
     
-    bit4 = 'Z' ## unused
+    if poly_baseline is None:
+        bit4 = 'Z' ## unused
+        use_gp=True
+    else:
+        bit4 = '{}'.format(poly_baseline)
+        use_gp=False
+    
     descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}'.format(bit0,
                                                bit1,
                                                bit2,
@@ -245,6 +252,7 @@ def set_up_wasp69b(map_type='variable',use_gp=True,
                                 descrip=descrip,
                                 map_type=map_type,amp_type='variable',
                                 systematics='Real',use_gp=use_gp,
+                                poly_baseline=poly_baseline,
                                 degree=degree,
                                 map_prior=map_prior,
                                 hotspotGuess_param=hotspotGuess_param,
@@ -256,7 +264,7 @@ def set_up_wasp69b(map_type='variable',use_gp=True,
                                 fix_Y1m1=fix_Y1m1)
     return sb
 
-def wasp69_test_if_nonuniform_is_significant():
+def wasp69_test_if_nonuniform_is_significant(poly_baseline=None):
     for mapType in ['variable','fixed']:
-        sb = set_up_wasp69b(map_type=mapType)
+        sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline)
         sb.run_all(super_giant_corner=True)
