@@ -41,6 +41,7 @@ class starry_basemodel():
                  map_type='variable',amp_type='variable',
                  systematics='Cubic',use_gp=True,
                  poly_baseline=None,
+                 exp_trend=None,
                  degree=3,map_prior='physical',
                  widerSphHarmonicPriors=False,
                  hotspotGuess_param={},
@@ -71,6 +72,8 @@ class starry_basemodel():
         poly_baseline: None or int
             If None, no polynomial baseline is used. If an integer >=1, do a polynomial baseline
             1 is a linear baseline, 2 is quadratic, etc.
+        exp_trend: None or True
+            If None, no exponential trend is fit. If True, exponential trend is fit
         degree: int
             The spherical harmonic degree
         t_subtracted: bool
@@ -130,6 +133,7 @@ class starry_basemodel():
         
         self.use_gp = use_gp
         self.poly_baseline = poly_baseline
+        self.exp_trend = exp_trend
         self.t_subtracted = t_subtracted
         
         self.data_path = dataPath
@@ -432,35 +436,47 @@ class starry_basemodel():
             else:
                 lc_eval = pm.Deterministic('lc_eval',sys.flux(t=self.x[self.mask]))
             
-            resid = self.y[self.mask] - lc_eval
+            
             
             ## estimate the standard deviation
             sigma_lc_guess = np.median(self.yerr)
             sigma_lc = pm.Lognormal("sigma_lc", mu=np.log(sigma_lc_guess), sigma=0.5)
             
-            if self.poly_baseline is not None:
-                if self.poly_baseline < 1:
-                    raise Exception("Poly baseline must be >= 1")
+            if self.poly_baseline is None:
+                lc_eval2 = lc_eval
+            else:
+                if self.poly_baseline < 0:
+                    raise Exception("Poly baseline must be >= 0")
                 xmin, xmax = np.nanmin(self.x), np.nanmax(self.x)
                 xmed, x_halfwidth = np.nanmedian(self.x), 0.5 * (xmax - xmin)
                 self.x_norm = (self.x - xmed) / x_halfwidth
                 poly_ord = self.poly_baseline
                 poly_coeff = pm.Normal("poly_coeff",mu=0.0,testval=0.0,
                                        sigma=0.1,
-                                       shape=(poly_ord))
+                                       shape=(poly_ord + 1))
                 
                 for poly_ind in np.arange(poly_ord):
                     if poly_ind == 0:
-                        poly_eval = self.x_norm * poly_coeff[poly_ord - poly_ind - 1]
+                        poly_eval = self.x_norm * poly_coeff[poly_ord - poly_ind]
                     else:
-                        poly_eval = (poly_eval + poly_coeff[poly_ord - poly_ind - 1]) * self.x_norm
-                lc_eval2 = lc_eval * (1.0 + poly_eval)
-            else:
-                lc_eval2 = lc_eval
+                        poly_eval = (poly_eval + poly_coeff[poly_ord - poly_ind]) * self.x_norm
+                lc_eval2 = lc_eval * (poly_coeff[0] + poly_eval)
+
             
+            if self.exp_trend is None:
+                lc_eval3 = lc_eval2
+            else:
+                tau_exp = pm.Lognormal("tau_exp",mu=1./24.,sigma=2.)
+                amp_exp = pm.Normal("amp_exp",1e-3,1e-3)
+
+                exp_curve = 1. + amp_exp * tt.exp(-(self.x - np.min(self.x))/tau_exp)
+                lc_eval3 = lc_eval2 * exp_curve
+
             ## estimate GP error as std
             #sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(np.std(self.y[self.mask]) * 1.0), sigma=0.5)
             ## Estimate GP error near the photon error
+            resid = self.y[self.mask] - lc_eval3
+
             if self.use_gp == True:
                 sigma_gp = pm.Lognormal("sigma_gp", mu=np.log(sigma_lc_guess), sigma=0.5,
                                         testval=sigma_lc_guess * 0.05)
@@ -475,9 +491,9 @@ class starry_basemodel():
                 gp = GaussianProcess(kernel, t=self.x[self.mask], yerr=sigma_lc,quiet=True)
                 gp.marginal("gp", observed=resid)
                 #gp_pred = pm.Deterministic("gp_pred", gp.predict(resid))
-                final_lc = pm.Deterministic("final_lc",lc_eval2 + gp.predict(resid))
+                final_lc = pm.Deterministic("final_lc",lc_eval3 + gp.predict(resid))
             else:
-                final_lc = pm.Deterministic("final_lc",lc_eval2)
+                final_lc = pm.Deterministic("final_lc",lc_eval3)
                 pm.Normal("obs", mu=final_lc, sd=sigma_lc, observed=self.y)
             
             # Save our initial guess w/ just the astrophysical component
@@ -564,7 +580,7 @@ class starry_basemodel():
         resid = self.y - f
         ax.legend()
         
-        ax2.errorbar(self.x,resid * 1e6,self.yerr,fmt='.',color=dataColor)
+        ax2.errorbar(self.x,resid * 1e6,self.yerr * 1e6,fmt='.',color=dataColor)
         
         if point == 'posterior':
             ax2.fill_between(self.x,(lim_final_lc[0,:] - f) * 1e6,

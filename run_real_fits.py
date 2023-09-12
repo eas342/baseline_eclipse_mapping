@@ -204,7 +204,8 @@ def set_up_wasp69b(map_type='variable',
                    degree=1,map_prior='physicalVisible',
                    ephem='kex',
                    fix_Y1m1=None,
-                   poly_baseline=None):
+                   poly_baseline=None,
+                   exp_trend=None):
     if ephem == 'IW':
         ## Ivshina & Winn ephemeris, fixed
         dataPath = 'real_data/WASP69b_BB_MIRI_lc.ecsv'
@@ -235,14 +236,20 @@ def set_up_wasp69b(map_type='variable',
     else:
         bit4 = '{}'.format(poly_baseline)
         use_gp=False
+
+    if exp_trend == True:
+        bit5 = 'E'
+    else:
+        bit5 = ''
     
-    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}'.format(bit0,
+    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}{}'.format(bit0,
                                                bit1,
                                                bit2,
                                                bit3,
-                                               bit4)
+                                               bit4,
+                                               bit5)
     hotspotGuess_param = {'xstart':30,'xend':70,
-            'ystart':30,'yend':70,
+            'ystart':15,'yend':85,
             'guess_x':0,'guess_y':0}
     ampGuess = 1.1e-3
     ampPrior = (1.1e-3,0.4)
@@ -253,6 +260,7 @@ def set_up_wasp69b(map_type='variable',
                                 map_type=map_type,amp_type='variable',
                                 systematics='Real',use_gp=use_gp,
                                 poly_baseline=poly_baseline,
+                                exp_trend=exp_trend,
                                 degree=degree,
                                 map_prior=map_prior,
                                 hotspotGuess_param=hotspotGuess_param,
@@ -264,7 +272,9 @@ def set_up_wasp69b(map_type='variable',
                                 fix_Y1m1=fix_Y1m1)
     return sb
 
-def wasp69_test_if_nonuniform_is_significant(poly_baseline=None):
+def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
+                                             exp_trend=True):
     for mapType in ['variable','fixed']:
-        sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline)
+        sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline,
+                            exp_trend=exp_trend)
         sb.run_all(super_giant_corner=True)
