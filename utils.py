@@ -466,8 +466,8 @@ class starry_basemodel():
             if self.exp_trend is None:
                 lc_eval3 = lc_eval2
             else:
-                tau_exp = pm.Lognormal("tau_exp",mu=1./24.,sigma=2.)
-                amp_exp = pm.Normal("amp_exp",1e-3,1e-3)
+                tau_exp = pm.Lognormal("tau_exp",mu=np.log(1./24.),sigma=0.5)
+                amp_exp = pm.Normal("amp_exp",1e-5,1e-3)
 
                 exp_curve = 1. + amp_exp * tt.exp(-(self.x - np.min(self.x))/tau_exp)
                 lc_eval3 = lc_eval2 * exp_curve
