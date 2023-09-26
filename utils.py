@@ -1546,6 +1546,37 @@ def compare_corners(sb1,sb2,sph_harmonics='all',
     fig1.savefig('plots/corner/comparison_{}.png'.format(file_descrip))
     plt.close(fig1)
 
+def compare_residuals(sbList,labels=None):
+    fig, ax = plt.subplots()
+    
+    for ind,sb in enumerate(sbList):
+        sb.find_mxap()
+        lc1 = sb.mxap_soln['final_lc']
+        if labels == None:
+            thisLabel = sb.descrip
+        else:
+            thisLabel = labels[ind]
+        if ind == 0:
+            x = sb.x
+            yerr = sb.yerr
+            resid = sb.y - lc1
+            lc_ref = lc1
+            ax.errorbar(x,resid * 1e6,yerr * 1e6,
+                        label='Residuals {}'.format(thisLabel),
+                        fmt='.',
+                        color='#720026')
+        else:
+            diff_model = lc1 - lc_ref
+    
+            ax.plot(x,diff_model * 1e6,label=thisLabel)
+    ax.legend()
+    ax.set_xlabel("BJD - {} (days)".format(sbList[0].t_reference))
+    ax.set_ylabel("Residual (ppm)")
+    fig.savefig('plots/residual_compare/resid_{}_vs_{}.pdf'.format(
+                sbList[0].descrip,sbList[1].descrip))
+    plt.close(fig)
+
+
 def compare_histos(sb1,sb2=None,sph_harmonics='all',
                    include_sigma_lc=True,
                    extra_descrip='',

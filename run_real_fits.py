@@ -296,3 +296,9 @@ def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
         sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline,
                             exp_trend=exp_trend,degree=degree)
         sb.run_all(super_giant_corner=True)
+
+def plot_resid_wasp69b():
+    sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=1)
+    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=1)
+    utils.compare_residuals([sb1,sb2],
+                            labels=['Uniform','Spherical Degree 1 - Uniform'])
