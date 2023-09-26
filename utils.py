@@ -634,10 +634,12 @@ class starry_basemodel():
             
             np.savez(self.mxap_path,**self.mxap_soln)
     
-    def update_mxap_after_sampling(self):
+    def update_mxap_after_sampling(self,method='maxL'):
         """
         Sometimes the mxap solution isn't found in find_mxap
-        Here, start at the posterior median and see if it goes up
+        Here, use Posterior info to see if it goes up
+         
+          (or posterior median)
         """
         ### Get variable names
         if hasattr(self,'model') == False:
@@ -650,16 +652,23 @@ class starry_basemodel():
             pm_data = arviz.from_pymc3(self.trace)
 
         
-        variables_modName = self.model.vars
-        variables_postName =  list(pm_data.posterior.data_vars)
-        start = {} ## starting guess dictionary
-        for oneVar in variables_postName:
-            #varName = oneVar.name
-            varName = oneVar
-            if ('_lc' not in varName) & ('lc_' not in varName):
-                trace2D = flatten_chains(pm_data.posterior[varName])
-                medVal = np.median(trace2D,axis=0)
-                start[varName] = medVal
+        if method == 'median':
+            variables_modName = self.model.vars
+            variables_postName =  list(pm_data.posterior.data_vars)
+            start = {} ## starting guess dictionary
+            for oneVar in variables_postName:
+                #varName = oneVar.name
+                varName = oneVar
+                if ('_lc' not in varName) & ('lc_' not in varName):
+                    trace2D = flatten_chains(pm_data.posterior[varName])
+                    medVal = np.median(trace2D,axis=0)
+                    start[varName] = medVal
+        else:
+            logL = np.array(np.sum(pm_data.log_likelihood.obs,axis=2))
+            maxPerChain = np.max(logL,axis=1)
+            maxChain = np.argmax(maxPerChain)
+            maxSample = np.argmax(logL,axis=1)[maxChain]
+            start = self.trace.point(maxSample,maxChain)
         with self.model:
             mxap_soln_new =pmx.optimize(start=start)
         ## only update if it's better than before
@@ -668,15 +677,17 @@ class starry_basemodel():
         if logp_new > logp_old:
             self.mxap_soln = mxap_soln_new
             np.savez(self.mxap_path,**self.mxap_soln)
+            return True
         else:
             print("Re-optimizing from posterior median didn't improve logp")
+            return False
         #return start
 
     def read_mxap(self):
         npzfiles  = np.load(self.mxap_path)#,allow_pickle=True)
         self.mxap_soln = dict(npzfiles)
 
-    def find_posterior(self):
+    def find_posterior(self,recalculate=False):
         if hasattr(self,'model') == False:
             self.build_model()
         
@@ -684,8 +695,9 @@ class starry_basemodel():
             self.find_mxap()
         
         outDir = os.path.join('fit_data','traces','trace_{}'.format(self.descrip))
-        if os.path.exists(outDir) == False:
-            os.mkdir(outDir)
+        if (os.path.exists(outDir) == False) | (recalculate == True):
+            if (os.path.exists(outDir) == False):
+                os.mkdir(outDir)
             np.random.seed(42)
             with self.model: 
                 trace = pmx.sample( 
@@ -1407,7 +1419,10 @@ class starry_basemodel():
         self.plot_lc(point='mxap')
         if find_posterior == True:
             self.find_posterior()
-            self.update_mxap_after_sampling()
+            gotBetter = self.update_mxap_after_sampling()
+            if gotBetter == True:
+                self.find_posterior(recalculate=True)
+            
             self.plot_lc(point='mxap')
             if super_giant_corner == True:
                 self.plot_corner()
