@@ -202,10 +202,23 @@ def test_if_nonuniform_is_significant():
 
 def set_up_wasp69b(map_type='variable',
                    degree=1,map_prior='physicalVisible',
-                   ephem='kex',
+                   ephem='kexVar',
                    fix_Y1m1=None,
                    poly_baseline=None,
                    exp_trend=None):
+    """
+    Decoder
+    V           variable map (F for fixed)
+     Z          Sph harmonic degree (Z for 1, else #)
+      M         Kokori et al. exoclock ephemeris w/
+                propagating all orb variable uncertainties
+                K for Kokori et al. ephemeris
+                Z for Ivshina & WInnn
+       Z        Free Y(1,-1). F for fixed
+        1       Polynomial baseline. Z for GP
+         E      Exponential trend
+    """
+
     if ephem == 'IW':
         ## Ivshina & Winn ephemeris, fixed
         dataPath = 'real_data/WASP69b_BB_MIRI_lc.ecsv'
@@ -213,6 +226,10 @@ def set_up_wasp69b(map_type='variable',
     elif ephem == 'kex':
         dataPath = 'real_data/WASP69b_BB_MIRI_lc_002_new_ephem.ecsv'
         bit2 = 'K'
+    elif ephem == 'kexVar':
+        ## variable stellar mass and radius for additiona propagation
+        dataPath = 'real_data/WASP69b_BB_MIRI_lc_003_new_ephem_var_MRs.ecsv'
+        bit2 = 'M'
     else:
         raise Exception("Unrecognized ephemeris {}".format(ephem))
     
@@ -253,7 +270,7 @@ def set_up_wasp69b(map_type='variable',
             'guess_x':0,'guess_y':0}
     ampGuess = 1.1e-3
     ampPrior = (1.1e-3,0.4)
-    cores=1
+    cores=2
 
     sb = utils.starry_basemodel(dataPath=dataPath,
                                 descrip=descrip,
@@ -273,8 +290,9 @@ def set_up_wasp69b(map_type='variable',
     return sb
 
 def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
-                                             exp_trend=True):
+                                             exp_trend=True,
+                                             degree=1):
     for mapType in ['variable','fixed']:
         sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline,
-                            exp_trend=exp_trend)
+                            exp_trend=exp_trend,degree=degree)
         sb.run_all(super_giant_corner=True)
