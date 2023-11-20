@@ -205,7 +205,8 @@ def set_up_wasp69b(map_type='variable',
                    ephem='kexVar',
                    fix_Y1m1=None,
                    poly_baseline=None,
-                   exp_trend=None):
+                   exp_trend=None,
+                   light_delay=True):
     """
     Decoder
     V           variable map (F for fixed)
@@ -217,6 +218,7 @@ def set_up_wasp69b(map_type='variable',
        Z        Free Y(1,-1). F for fixed
         1       Polynomial baseline. Z for GP
          E      Exponential trend
+          _T     travel delay
     """
 
     if ephem == 'IW':
@@ -259,12 +261,18 @@ def set_up_wasp69b(map_type='variable',
     else:
         bit5 = ''
     
-    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}{}'.format(bit0,
+    if light_delay == True:
+        bit6 = '_T' ## new bit now that light travel delay is on
+    else:
+        bit6 = ''
+    
+    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}{}{}'.format(bit0,
                                                bit1,
                                                bit2,
                                                bit3,
                                                bit4,
-                                               bit5)
+                                               bit5,
+                                               bit6)
     hotspotGuess_param = {'xstart':30,'xend':70,
             'ystart':15,'yend':85,
             'guess_x':0,'guess_y':0}
@@ -286,7 +294,8 @@ def set_up_wasp69b(map_type='variable',
                                 cores=cores,
                                 nuts_init='auto',
                                 t_subtracted=True,
-                                fix_Y1m1=fix_Y1m1)
+                                fix_Y1m1=fix_Y1m1,
+                                light_delay=light_delay)
     return sb
 
 def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
@@ -297,8 +306,10 @@ def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
                             exp_trend=exp_trend,degree=degree)
         sb.run_all(super_giant_corner=True)
 
-def plot_resid_wasp69b():
-    sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=1)
-    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=1)
+def plot_resid_wasp69b(degree=1,binResid=None):
+    sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=degree)
+    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree)
     utils.compare_residuals([sb1,sb2],
-                            labels=['Uniform','Spherical Degree 1 - Uniform'])
+                            labels=['from Uniform Model',
+                                    'Spherical Degree 1 - Uniform Model'],
+                            binResid=binResid)
