@@ -19,6 +19,7 @@ import hotspot_fitter
 import arviz
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import gridspec
+from scipy.stats import binned_statistic
 
 starry.config.lazy = True
 starry.config.quiet = True
@@ -53,7 +54,8 @@ class starry_basemodel():
                  ampPrior=None,
                  fix_Y10=None,
                  fix_Y1m1=None,
-                 nuts_init="adapt_full"):
+                 nuts_init="adapt_full",
+                 light_delay=False):
         """
         Set up a starry model
         dataPath: str
@@ -113,6 +115,8 @@ class starry_basemodel():
         ampPrior: Tuple of floats or None
             Prior on the amplitude of the map. If supplied, should be a tuple
             with the mean of X[0] and standard deviation of X[1]
+        light_delay: Include the light travel time delay? Allows reproduction of 
+            earlier results, but should be True
         """
         
         
@@ -161,6 +165,7 @@ class starry_basemodel():
 
         self.fast_render_prepared = False
         self.fast_render_res = None
+        self.light_delay = light_delay
     
     def get_data(self,path):
         """ Gather the data
@@ -408,7 +413,7 @@ class starry_basemodel():
                                         ecc=physOrbDict['ecc'],
                                         w=physOrbDict['omega'])
             b.theta0 = 180.0
-            sys = starry.System(A,b)
+            sys = starry.System(A,b,light_delay=self.light_delay)
             
             self.sys = sys
             
@@ -1561,7 +1566,75 @@ def compare_corners(sb1,sb2,sph_harmonics='all',
     fig1.savefig('plots/corner/comparison_{}.png'.format(file_descrip))
     plt.close(fig1)
 
-def compare_residuals(sbList,labels=None):
+def do_binning(x,y,nBin=20,yerr=None,returnXwidth=False):
+    """
+    A function that uses scipy binned_statistic to bin data
+    
+    It also calculates the standard error in each bin,
+    which can be used as an error estimate
+    
+    Parameters
+    --------------
+    x: numpy array
+        Independent variable for use in assigning data to bins
+    y: numpy array
+        Dependent variable to be binned
+    yerr: numpy array (optional)
+        The error on the y points
+    nBin: int or numpy array
+        The number of bins or else the bin array
+    returnXwidth: bool
+        Return the X widths?
+        
+    Returns
+    -------------
+    3 item tuple:
+    xBin, yBin, yStd
+    
+    xBin: numpy array
+        Middles of the bins
+    yBin: numpy array
+        mean value in bin
+    yStd: numpy array
+        If yerr supplied,standard error of each bin
+        If yerr not supplied, the standard deviation of each bin
+    xWidth: numpy array
+        The x widths? If returnXwidth is True
+    """
+    yBins = Table()
+    for oneStatistic in ['mean','std','count']:
+        yBin, xEdges, binNum = binned_statistic(x,y,
+                                                statistic=oneStatistic,bins=nBin)
+        yBins[oneStatistic] = yBin
+
+    if yerr is not None:
+        weights = 1./yerr**2
+        wSum, xEdges, binNum = binned_statistic(x,weights * y,
+                                                statistic='sum',bins=nBin)
+        sumW, xEdges, binNum = binned_statistic(x,weights,
+                                                statistic='sum',bins=nBin)
+        yWAvg = wSum/sumW
+        yWAvg_err = 1./np.sqrt(sumW)
+
+
+    xShow = (xEdges[:-1] + xEdges[1:])/2.
+    xWidth = xEdges[1:] - xEdges[:-1]
+    if yerr is None:
+        stdErrM = yBins['std'] / np.sqrt(yBins['count'])
+        ## Standard error in the mean
+        yErrShow = stdErrM
+        yShow = yBins['mean']
+    else:
+        yShow = yWAvg
+        yErrShow = yWAvg_err
+
+    if returnXwidth == True:
+        return xShow, yShow, yErrShow, xWidth
+    else:
+        return xShow, yShow, yErrShow
+
+def compare_residuals(sbList,labels=None,
+                      binResid=None):
     fig, ax = plt.subplots()
     
     for ind,sb in enumerate(sbList):
@@ -1576,7 +1649,17 @@ def compare_residuals(sbList,labels=None):
             yerr = sb.yerr
             resid = sb.y - lc1
             lc_ref = lc1
-            ax.errorbar(x,resid * 1e6,yerr * 1e6,
+            if binResid is None:
+                xshow = x
+                yshow = resid
+                yerrshow = yerr
+
+            else:
+                xshow, yshow, yerrshow = do_binning(x,resid,
+                                                    yerr=yerr,
+                                                    nBin=binResid)
+
+            ax.errorbar(xshow,yshow * 1e6,yerrshow * 1e6,
                         label='Residuals {}'.format(thisLabel),
                         fmt='.',
                         color='#720026')
