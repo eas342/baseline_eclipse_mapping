@@ -115,8 +115,8 @@ class starry_basemodel():
         ampPrior: Tuple of floats or None
             Prior on the amplitude of the map. If supplied, should be a tuple
             with the mean of X[0] and standard deviation of X[1]
-        light_delay: Include the light travel time delay? Allows reproduction of 
-            earlier results, but should be True
+        light_delay: Include the light travel time delay? Setting it to False
+            allows reproduction of earlier results, but should be True
         """
         
         
