@@ -313,3 +313,12 @@ def plot_resid_wasp69b(degree=1,binResid=None):
                             labels=['from Uniform Model',
                                     'Spherical Degree 1 - Uniform Model'],
                             binResid=binResid)
+    
+def check_hotspot_offset_fixY1m1(degree=1):
+    """
+    Check the hotspot offset if I fix Y1_-1
+    (actually a strong prior at zero b/c I need to update code)
+    """
+    sb = set_up_wasp69b(map_type='variable',fix_Y1m1=0.0,poly_baseline=1,
+                        exp_trend=True,degree=degree,light_delay=False)
+    sb.run_all()
