@@ -206,7 +206,9 @@ def set_up_wasp69b(map_type='variable',
                    fix_Y1m1=None,
                    poly_baseline=None,
                    exp_trend=None,
-                   light_delay=True):
+                   light_delay=True,
+                   specificHarmonics=False,
+                   ):
     """
     Decoder
     V           variable map (F for fixed)
@@ -219,6 +221,7 @@ def set_up_wasp69b(map_type='variable',
         1       Polynomial baseline. Z for GP
          E      Exponential trend
           _T     travel delay
+            -bo boolean mask to variable harmonics  
     """
 
     if ephem == 'IW':
@@ -265,14 +268,33 @@ def set_up_wasp69b(map_type='variable',
         bit6 = '_T' ## new bit now that light travel delay is on
     else:
         bit6 = ''
+
+    if specificHarmonics == True:
+        bit7 = '-bo'
+        var_harmonic_mask = [False, True, True, False, False, True, True, False]
+
+        # '$Y_{1,-1}$',  False
+        # '$Y_{1,0}$',  True
+        # '$Y_{1,1}$',  True
+        # '$Y_{2,-2}$',  False
+        # '$Y_{2,-1}$', False
+        # '$Y_{2,0}$',   True
+        # '$Y_{2,1}$',   True
+        # '$Y_{2,2}$']   False
+    else:
+        var_harmonic_mask = None
+ 
+ 
+
     
-    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}{}{}'.format(bit0,
+    descrip = 'WASP69b_MIRI_BB_{}{}{}{}{}{}{}{}'.format(bit0,
                                                bit1,
                                                bit2,
                                                bit3,
                                                bit4,
                                                bit5,
-                                               bit6)
+                                               bit6,
+                                               bit7)
     hotspotGuess_param = {'xstart':30,'xend':70,
             'ystart':15,'yend':85,
             'guess_x':0,'guess_y':0}
@@ -295,7 +317,8 @@ def set_up_wasp69b(map_type='variable',
                                 nuts_init='auto',
                                 t_subtracted=True,
                                 fix_Y1m1=fix_Y1m1,
-                                light_delay=light_delay)
+                                light_delay=light_delay,
+                                var_harmonic_mask=var_harmonic_mask)
     return sb
 
 def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
@@ -322,3 +345,9 @@ def check_hotspot_offset_fixY1m1(degree=1):
     sb = set_up_wasp69b(map_type='variable',fix_Y1m1=0.0,poly_baseline=1,
                         exp_trend=True,degree=degree,light_delay=False)
     sb.run_all()
+
+def set_up_specific_harmonics_w69():
+    sb = set_up_wasp69b(map_type='variable',poly_baseline=1,
+                    exp_trend=True,degree=2,light_delay=False,
+                    specificHarmonics=True)
+    return sb

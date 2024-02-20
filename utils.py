@@ -54,6 +54,7 @@ class starry_basemodel():
                  ampPrior=None,
                  fix_Y10=None,
                  fix_Y1m1=None,
+                 var_harmonic_mask=None,
                  nuts_init="adapt_full",
                  light_delay=False):
         """
@@ -94,6 +95,11 @@ class starry_basemodel():
             Fix the Y{1,-1} term at a particular value. If None, it will allow Y{1,-1} float.
             This actually puts a tiny Gaussian around the value because the code is not set up for a 
             fixed Y10 term
+        var_harmonic_mask: None or boolean array w/ length (degree+1)**2 -1
+            Use this array if you want to specifically fit for some spherical harmonics only
+            Set all elements you want to be variable to True,
+            Set all elements you want to be fixed to 0 to be False
+            The first Y(0,0) term is assumed to always be variable so start w/ the Y(1,-1) term
         widerSphHarmonicPriors: bool
             Put wider priors on the spherical harmonic coefficients?
             As of 2022-06-02, when widerSphHarmoincPriors is True, it is 3.0, otherwise 0.5.
@@ -145,6 +151,9 @@ class starry_basemodel():
         self.map_prior = map_prior
         self.fix_Y10 = fix_Y10
         self.fix_Y1m1 = fix_Y1m1
+        if var_harmonic_mask is not None:
+            assert (len(var_harmonic_mask) == (self.degree+1)**2-1),'Sph Harm Mask != (Degree+1)^2-1'
+        self.var_harmonic_mask = var_harmonic_mask
         
         self.widerSphHarmonicPriors = widerSphHarmonicPriors
         
@@ -307,7 +316,12 @@ class starry_basemodel():
             else:
                 b_map.amp = 1e-3
             
-            ncoeff = b_map.Ny - 1
+            ncoeff_full = b_map.Ny - 1
+            if self.var_harmonic_mask is None:
+                ncoeff = ncoeff_full
+            else:
+                ncoeff = np.sum(self.var_harmonic_mask[1:])
+            
             if self.data_path == 'sim_data/sim_data_baseline_hd189_ncF444W.ecsv':
                 sec_mu = np.zeros(ncoeff)
             else:
@@ -368,10 +382,34 @@ class starry_basemodel():
             if self.map_type == 'variable':
                 if self.map_prior == 'uniformPixels':
                     pass
-                else:
+                elif self.var_harmonic_mask is None:
                     b_map[1:,:] = pm.MvNormal("sec_y",sec_mu,sec_cov,shape=(ncoeff,),
                                               testval=sec_testval)
-                
+                else:
+                    ## Populate only specific spherical harmonic terms
+                    var_y = pm.MvNormal("var_y",sec_mu,sec_cov,shape=(ncoeff,),
+                                        testval=sec_testval)
+                    
+                    boolMatrix = np.zeros([ncoeff_full,ncoeff])
+                    
+                    #ells, ems = get_l_and_m_lists(degree=self.degree)
+                    
+                    var_y_counter = 0
+                    sec_y_placeholder = []
+                    for oneHarmInd in range(ncoeff_full):
+                        #ell = ells[oneHarmInd]
+                        #em = ems[oneHarmInd]
+
+                        if self.var_harmonic_mask[oneHarmInd] == True:
+                            boolMatrix[oneHarmInd,var_y_counter] = 1
+                            var_y_counter = var_y_counter + 1
+
+                    #pdb.set_trace()
+                    sec_y = pm.Deterministic('sec_y',tt.dot(boolMatrix,var_y))
+                    
+                    b_map[1:,:] = sec_y
+                    
+
             if (self.map_prior == 'physical') | (self.map_prior == 'physicalVisible'):
                 # Add another constraint that the map should be physical
                 map_evaluate = b_map.render(projection='rect',res=res_for_physical_check)
@@ -752,6 +790,9 @@ class starry_basemodel():
                     pass ## skip
                 else:
                     keep_list.append(one_var)
+            elif one_var == 'var_y':
+                ## skip the var_y variable b/c this is a subset of spherical harmonics
+                pass
             elif one_var[-5:] == 'log__':
                 ## Skip variables that have both log and linear versions
                 pass
@@ -822,8 +863,24 @@ class starry_basemodel():
         samples_all = pm.trace_to_dataframe(self.trace, varnames=varnames)
         
         ## the trace_to_dataframe splits up arrays of variables
-        keys_varlist_full = list(samples_all.keys())
-        
+        if self.var_harmonic_mask is None:
+            keys_varlist_full = list(samples_all.keys())
+        else:
+            ## eliminate the fixed spherical harmonics
+            preliminary_varlist = list(samples_all.keys())
+            keys_varlist_full = []
+            for oneKeyFromCandidates in preliminary_varlist:
+                if 'sec_y__' in oneKeyFromCandidates:
+                    sec_y_index = int(oneKeyFromCandidates.split('sec_y__')[1])
+                    if self.var_harmonic_mask[sec_y_index] == True:
+                        keys_varlist_full.append(oneKeyFromCandidates)
+                    else:
+                        ## don't include non-variable terms for sampling (all constant)
+                        pass
+                else:
+                    keys_varlist_full.append(oneKeyFromCandidates)
+
+
         if discard_px_vars == True:
             keys_varlist = []
             for oneKeyFromFull in keys_varlist_full:
@@ -860,6 +917,7 @@ class starry_basemodel():
     
     def plot_corner(self):
         samples, truths,labels = self.prep_corner()
+        
         _ = corner.corner(samples,truths=truths,labels=labels)
         plt.savefig('plots/corner/{}'.format(self.descrip))
         plt.close()
