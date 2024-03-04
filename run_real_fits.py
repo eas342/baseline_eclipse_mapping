@@ -208,7 +208,7 @@ def set_up_wasp69b(map_type='variable',
                    exp_trend=None,
                    light_delay=True,
                    specificHarmonics=False,
-                   ):
+                   fix_Y1m1_truly=False):
     """
     Decoder
     V           variable map (F for fixed)
@@ -217,7 +217,7 @@ def set_up_wasp69b(map_type='variable',
                 propagating all orb variable uncertainties
                 K for Kokori et al. ephemeris
                 Z for Ivshina & WInnn
-       Z        Free Y(1,-1). F for fixed
+       Z        Free Y(1,-1). F for "fixed", T for truly fixed.
         1       Polynomial baseline. Z for GP
          E      Exponential trend
           _T     travel delay
@@ -247,10 +247,12 @@ def set_up_wasp69b(map_type='variable',
     else:
         bit1 = '{}'.format(degree)
 
-    if fix_Y1m1 is None:
+    if fix_Y1m1_truly == True:
+        bit3 = 'T'
+    elif fix_Y1m1 is None:
         bit3 = 'Z' ## free
     else:
-        bit3 = 'F' ## fixed
+        bit3 = 'F' ## "fixed" by using a tight prior
     
     if poly_baseline is None:
         bit4 = 'Z' ## unused
@@ -269,7 +271,12 @@ def set_up_wasp69b(map_type='variable',
     else:
         bit6 = ''
 
-    if specificHarmonics == True:
+    if fix_Y1m1_truly == True:
+        var_harmonic_mask = [True] * ((degree+1)**2 -1)
+        var_harmonic_mask[0] = False
+        bit7 = ''
+    elif specificHarmonics == True:
+        assert (degree==2), "degree must be 2 for this mask"
         bit7 = '-bo'
         var_harmonic_mask = [False, True, True, False, False, True, True, False]
 
@@ -283,6 +290,7 @@ def set_up_wasp69b(map_type='variable',
         # '$Y_{2,2}$']   False
     else:
         var_harmonic_mask = None
+        bit7 = ''
  
  
 
@@ -334,7 +342,7 @@ def plot_resid_wasp69b(degree=1,binResid=None):
     sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree)
     utils.compare_residuals([sb1,sb2],
                             labels=['from Uniform Model',
-                                    'Spherical Degree 1 - Uniform Model'],
+                                    'Spherical Degree {} - Uniform Model'.format(degree)],
                             binResid=binResid)
     
 def check_hotspot_offset_fixY1m1(degree=1):
@@ -346,8 +354,28 @@ def check_hotspot_offset_fixY1m1(degree=1):
                         exp_trend=True,degree=degree,light_delay=False)
     sb.run_all()
 
+def check_hotspot_offset_fixY1m1_truly(degree=1):
+    """
+    Check the hotspot offset if I fix Y1_-1
+    Actually fixed the Y(1,-1) to zero
+    """
+    sb = set_up_wasp69b(map_type='variable',fix_Y1m1_truly=True,poly_baseline=1,
+                        exp_trend=True,degree=degree,light_delay=False)
+    sb.run_all()
+
 def set_up_specific_harmonics_w69():
     sb = set_up_wasp69b(map_type='variable',poly_baseline=1,
                     exp_trend=True,degree=2,light_delay=False,
                     specificHarmonics=True)
     return sb
+
+
+def compare_residuals_deg1_deg2_selected_harm():
+    sb1 = set_up_wasp69b(map_type='variable',fix_Y1m1_truly=True,poly_baseline=1,
+                        exp_trend=True,degree=1,light_delay=False)
+    sb2 = set_up_specific_harmonics_w69()
+    utils.compare_residuals([sb1,sb2],
+                            labels=['Degree=1, selected terms',
+                                    'Degree=2 selected - Degree=1 selected'],
+                            binResid=None)
+
