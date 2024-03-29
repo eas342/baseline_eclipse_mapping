@@ -2,6 +2,8 @@ import utils
 from astropy.io import fits, ascii
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import corner
 
 
 def set_up_sb_obj(map_type='variable',use_gp=True,
@@ -369,6 +371,20 @@ def set_up_specific_harmonics_w69():
                     specificHarmonics=True)
     return sb
 
+def examine_corner_specific_harmonics():
+    sb = set_up_specific_harmonics_w69()
+    samples, truths, labels = sb.prep_corner(include_sigma_lc=False,include_GP=False)
+    cols = samples.columns
+    use_labels = [labels[5],labels[9],labels[10],labels[11],labels[12]]
+    use_cols = [cols[5],cols[9],cols[10],cols[11],cols[12]]
+    plt.close('all')
+    #fig, ax = plt.subplots(figsize=(5,5))
+    fig = plt.figure(figsize=(7,7))
+    _ = corner.corner(samples,labels=use_labels,var_names=use_cols,fig=fig)
+    fig.savefig('plots/corner/'+sb.descrip+'_selected.png',
+                dpi=150,bbox_inches='tight',facecolor='white')
+    #use_samples = [samples[5],samples[9],samples[10],samples[11],samples[12]]
+    
 
 def compare_residuals_deg1_deg2_selected_harm():
     sb1 = set_up_wasp69b(map_type='variable',fix_Y1m1_truly=True,poly_baseline=1,
