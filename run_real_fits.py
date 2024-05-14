@@ -333,15 +333,20 @@ def set_up_wasp69b(map_type='variable',
 
 def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
                                              exp_trend=True,
-                                             degree=1):
+                                             degree=1,
+                                             light_delay=False):
     for mapType in ['variable','fixed']:
         sb = set_up_wasp69b(map_type=mapType,poly_baseline=poly_baseline,
-                            exp_trend=exp_trend,degree=degree)
+                            exp_trend=exp_trend,degree=degree,
+                            light_delay=light_delay)
         sb.run_all(super_giant_corner=True)
 
-def plot_resid_wasp69b(degree=1,binResid=None):
-    sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=degree)
-    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree)
+def plot_resid_wasp69b(degree=1,binResid=None,
+                       light_delay=False):
+    sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=degree,
+                         light_delay=light_delay)
+    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree,
+                         light_delay=light_delay)
     utils.compare_residuals([sb1,sb2],
                             labels=['from Uniform Model',
                                     'Spherical Degree {} - Uniform Model'.format(degree)],
