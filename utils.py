@@ -1045,10 +1045,12 @@ class starry_basemodel():
         t['nvar'] = nvar
         t['npoints'] = npoints
         t['red chisq'] = chisq / float(npoints - nvar)
+        t['logp pymc3'] = logp
+        t['sigma_lc'] = sigma_lc
         t['chisq sigma_lc'] = chisq2
         t['red chisq sigma_lc'] = chisq2 / float(npoints - nvar)
         t['BIC sigma_lc'] = BIC2
-        t['logp pymc3'] = logp
+
         
         outName = os.path.join('fit_data','lc_BIC','{}_lc_BIC.csv'.format(self.descrip))
         print("Saving BIC statistics to {}".format(outName))
