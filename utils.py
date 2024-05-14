@@ -1036,6 +1036,7 @@ class starry_basemodel():
         nvar = len(self.get_unique_variables())
         npoints = len(self.y)
         BIC = chisq + nvar * np.log(npoints)
+        BIC2 = chisq2 + nvar * np.log(npoints)
 
         logp = self.model.logp(self.mxap_soln)
         t = Table()
@@ -1046,6 +1047,7 @@ class starry_basemodel():
         t['red chisq'] = chisq / float(npoints - nvar)
         t['chisq sigma_lc'] = chisq2
         t['red chisq sigma_lc'] = chisq2 / float(npoints - nvar)
+        t['BIC sigma_lc'] = BIC2
         t['logp pymc3'] = logp
         
         outName = os.path.join('fit_data','lc_BIC','{}_lc_BIC.csv'.format(self.descrip))
