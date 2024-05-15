@@ -1,10 +1,11 @@
 import utils
 from astropy.io import fits, ascii
+from astropy.table import Table, vstack
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import corner
-
+from copy import deepcopy
 
 def set_up_sb_obj(map_type='variable',use_gp=True,
                   lc='F444W',overrideDegree=None,
@@ -400,3 +401,39 @@ def compare_residuals_deg1_deg2_selected_harm():
                                     'Degree=2 selected - Degree=1 selected'],
                             binResid=None)
 
+def compare_BIC_wasp69b_uniform_deg2():
+    """
+    Compare the BICs for lightcurve fits of WASP-69 b
+    but take into account error inflation
+    Use a common error inflation between the two fits
+    """
+    stats_f_file = ('fit_data/lc_BIC/'+
+                    'WASP69b_MIRI_BB_F2MZ1E_maptype_fixed_amp_type_variableReal_lc_BIC.csv')
+    stats_v_file = ('fit_data/lc_BIC/'+
+                     'WASP69b_MIRI_BB_V2MZ1E_maptype_variable_amp_type_variableReal_lc_BIC.csv')
+    stats_out_file = ('fit_data/lc_BIC/'+
+                     'WASP69b_MIRI_BB_F2MZ1E_maptype_variable_amp_type_variableReal_BC_vs_variable.csv')
+    stats_f = ascii.read(stats_f_file)
+    stats_v = ascii.read(stats_v_file)
+
+    ## use a common inflated error between them
+    sigma_lc_c = stats_f['sigma_lc'][0]
+    stats_f_c = redo_BIC(stats_f,sigma_lc_c)
+    stats_v_c = redo_BIC(stats_v,sigma_lc_c)
+    stats_common = vstack([stats_f_c,stats_v_c])
+    stats_common['map_type'] = ['Fixed','Variable']
+    stats_common.write(stats_out_file,overwrite=True)
+
+def redo_BIC(stats,sigma_lc):
+    """
+    Re-do the BIC with a new sigma
+    """
+    stats_new = deepcopy(stats)
+    old_sigma = stats['sigma_lc'][0]
+    stats_new['sigma_lc'] = sigma_lc
+    stats_new['chisq sigma_lc']  = stats['chisq sigma_lc'] * (old_sigma/sigma_lc)**2
+    npoints = stats['npoints'][0]
+    nvar = stats['nvar'][0]
+    stats_new['red chisq sigma_lc'] = stats_new['chisq sigma_lc'] / float(npoints - nvar)
+    stats_new['BIC sigma_lc'] = stats_new['chisq sigma_lc'] + + nvar * np.log(npoints)
+    return stats_new
