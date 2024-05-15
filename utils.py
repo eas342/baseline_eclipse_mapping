@@ -1011,9 +1011,15 @@ class starry_basemodel():
                 pass
             elif oneVariable == 'rho_gp_log__':
                 pass
-            elif oneVariable == 'sec_y':
+            elif oneVariable == 'var_y':
+                ## if there is variable harmonic mask
+                assert (self.var_harmonic_mask is not None),"must have var harm mask"
                 for ind,oneVar in enumerate(self.mxap_soln[oneVariable]):
-                    all_unique_variables.append('sec_y_{:03d}'.format(ind))
+                    all_unique_variables.append('var_y_{:03d}'.format(ind))
+            elif oneVariable == 'sec_y':
+                if self.var_harmonic_mask is None:
+                    for ind,oneVar in enumerate(self.mxap_soln[oneVariable]):
+                        all_unique_variables.append('sec_y_{:03d}'.format(ind))
             else:
                 all_unique_variables.append(oneVariable)
         
