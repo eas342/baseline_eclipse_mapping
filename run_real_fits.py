@@ -224,7 +224,8 @@ def set_up_wasp69b(map_type='variable',
         1       Polynomial baseline. Z for GP
          E      Exponential trend
           _T     travel delay
-            -bo boolean mask to variable harmonics  
+            -bo boolean mask to variable harmonics
+            -bg boolean mask for only sph harmoincs w/ gradient  
     """
 
     if ephem == 'IW':
@@ -290,6 +291,21 @@ def set_up_wasp69b(map_type='variable',
         # '$Y_{2,-1}$', False
         # '$Y_{2,0}$',   True
         # '$Y_{2,1}$',   True
+        # '$Y_{2,2}$']   False
+    elif specificHarmonics == 'gradient':
+        ### Keep the harmonic that correspond to a gradient from substellar point
+        ## ie Y_{1,0} and Y_{2,0}
+        assert (degree==2), "degree must be 2 for this mask"
+        bit7 = '-bg'
+        var_harmonic_mask = [False, True, False, False, False, True, False, False]
+
+        # '$Y_{1,-1}$',  False
+        # '$Y_{1,0}$',  True
+        # '$Y_{1,1}$',  False
+        # '$Y_{2,-2}$',  False
+        # '$Y_{2,-1}$', False
+        # '$Y_{2,0}$',   True
+        # '$Y_{2,1}$',   False
         # '$Y_{2,2}$']   False
     else:
         var_harmonic_mask = None
@@ -371,10 +387,19 @@ def check_hotspot_offset_fixY1m1_truly(degree=1):
                         exp_trend=True,degree=degree,light_delay=False)
     sb.run_all()
 
-def set_up_specific_harmonics_w69():
+def set_up_specific_harmonics_w69(gradientOnly=True):
+    """ 
+    Set up specific harmonic mask
+    gradientOnly: bool
+        Only look at the variables that make a gradient?
+    """
+    if gradientOnly == True:
+        specificHarmonics = 'gradient'
+    else:
+        specificHarmonics = True
     sb = set_up_wasp69b(map_type='variable',poly_baseline=1,
                     exp_trend=True,degree=2,light_delay=False,
-                    specificHarmonics=True)
+                    specificHarmonics=specificHarmonics)
     return sb
 
 def examine_corner_specific_harmonics():
@@ -411,18 +436,23 @@ def compare_BIC_wasp69b_uniform_deg2():
                     'WASP69b_MIRI_BB_F2MZ1E_maptype_fixed_amp_type_variableReal_lc_BIC.csv')
     stats_v_file = ('fit_data/lc_BIC/'+
                      'WASP69b_MIRI_BB_V2MZ1E_maptype_variable_amp_type_variableReal_lc_BIC.csv')
+    stats_v_file2 = ('fit_data/lc_BIC/'+
+                     'WASP69b_MIRI_BB_V2MZ1E-bg_maptype_variable_amp_type_variableReal_lc_BIC.csv')
     stats_out_file = ('fit_data/lc_BIC/'+
                      'WASP69b_MIRI_BB_F2MZ1E_maptype_variable_amp_type_variableReal_BC_vs_variable.csv')
     stats_f = ascii.read(stats_f_file)
     stats_v = ascii.read(stats_v_file)
+    stats_v2 = ascii.read(stats_v_file2)
 
     ## use a common inflated error between them
     sigma_lc_c = stats_f['sigma_lc'][0]
     stats_f_c = redo_BIC(stats_f,sigma_lc_c)
     stats_v_c = redo_BIC(stats_v,sigma_lc_c)
-    stats_common = vstack([stats_f_c,stats_v_c])
-    stats_common['map_type'] = ['Fixed','Variable']
+    stats_v2_c = redo_BIC(stats_v2,sigma_lc_c)
+    stats_common = vstack([stats_f_c,stats_v_c,stats_v2_c])
+    stats_common['map_type'] = ['Fixed','Variable','Variable grad only']
     stats_common.write(stats_out_file,overwrite=True)
+    print("output saved to {}".format(stats_out_file))
 
 def redo_BIC(stats,sigma_lc):
     """
