@@ -358,15 +358,23 @@ def wasp69_test_if_nonuniform_is_significant(poly_baseline=1,
                             light_delay=light_delay)
         sb.run_all(super_giant_corner=True)
 
-def plot_resid_wasp69b(degree=1,binResid=None,
-                       light_delay=False):
+def plot_resid_wasp69b(degree=2,binResid=None,
+                       light_delay=False,
+                       gradientOnly=True):
     sb1 = set_up_wasp69b(map_type='fixed',exp_trend=True,poly_baseline=1,degree=degree,
                          light_delay=light_delay)
-    sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree,
-                         light_delay=light_delay)
+    if gradientOnly == True:
+        assert (degree==2),'Degree must be 2'
+        sb2 = set_up_specific_harmonics_w69(gradientOnly=True)
+        modelLabel2 = 'Dayside Map Gradient - Uniform Model'
+    else:
+        sb2 = set_up_wasp69b(map_type='variable',exp_trend=True,poly_baseline=1,degree=degree,
+                            light_delay=light_delay)
+        modelLabel2 = 'Spherical Degree {} - Uniform Model'.format(degree)
+           
     utils.compare_residuals([sb1,sb2],
                             labels=['from Uniform Model',
-                                    'Spherical Degree {} - Uniform Model'.format(degree)],
+                                    modelLabel2],
                             binResid=binResid)
     
 def check_hotspot_offset_fixY1m1(degree=1):
