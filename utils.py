@@ -623,12 +623,13 @@ class starry_basemodel():
         resid = self.y - f
         ax.legend()
         
-        ax2.errorbar(self.x,resid * 1e6,self.yerr * 1e6,fmt='.',color=dataColor)
+        ax2.errorbar(self.x,resid * 1e6,self.yerr * 1e6,fmt='.',color=dataColor,
+                     zorder=5)
         
         if point == 'posterior':
             ax2.fill_between(self.x,(lim_final_lc[0,:] - f) * 1e6,
                              (lim_final_lc[1,:] - f) * 1e6,color=u'#ff7f0e',
-                             zorder=10)
+                             zorder=1)
             #ax.fill_between(self.x,trace_hdi['lc_eval'][:,0],trace_hdi['lc_eval'][:,1])
         
         if self.t_subtracted == True:
